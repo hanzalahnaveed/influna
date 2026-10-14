@@ -1,36 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Influna
 
-## Getting Started
+Influna is a Next.js app with a PostgreSQL-backed campaign API.
 
-First, run the development server:
+## Run locally
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Requirements: Node.js 20+ and PostgreSQL 14+.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. Install packages with `npm install`.
+2. Create a PostgreSQL database named `influna`.
+3. Copy `.env.example` to `.env` and set `DATABASE_URL` to the connection string for your database.
+4. Generate the Prisma client and create the database tables:
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+   ```bash
+   npm run db:generate
+   npm run db:migrate
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+5. Start the app with `npm run dev`.
 
-## Learn More
+The frontend and API run together at `http://localhost:3000`. There is no separate service on port 8000.
 
-To learn more about Next.js, take a look at the following resources:
+For a production deployment, configure `DATABASE_URL`, run `npm run db:generate` during the build, and run `npm run db:deploy` before serving traffic.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## API
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+All endpoints return JSON except successful deletes, which return `204 No Content`.
 
-## Deploy on Vercel
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/v1/campaigns` | List campaigns, newest first |
+| `GET` | `/api/v1/campaigns?status=Draft` | Filter campaigns by `Active`, `Draft`, `Completed`, or `Cancelled` |
+| `POST` | `/api/v1/campaigns` | Create a campaign; send the campaign sections used by the UI |
+| `GET` | `/api/v1/campaigns/:id` | Get one campaign |
+| `PUT` | `/api/v1/campaigns/:id` | Partially update campaign sections |
+| `DELETE` | `/api/v1/campaigns/:id` | Delete a campaign |
+| `GET` | `/api/v1/dashboard` | Get campaign totals by status |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Campaign JSON uses `campaign_details`, `targeting_criteria`, `platform_details`, and `payment_information` sections. Campaign payment information is stored as terms only; no charges or payment-provider operations are performed. Complete campaigns are validated on create/update; drafts may be incomplete.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Access and security
+
+Authentication and per-user ownership are not implemented. As currently built, anyone who can reach the app can read, create, update, and delete campaigns. Do not expose this API publicly until authentication and authorization are added.
