@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { MdOutlineSpaceDashboard } from "react-icons/md";
 import { MdOutlineCampaign } from "react-icons/md";
+import { FiLogIn } from "react-icons/fi";
 import { IoMdNotificationsOutline } from "react-icons/io";
 import ButtonPrimary from "@/components/ReusableComponents/CustomButton/ButtonPrimary";
 import LoginModal from "./LoginModal";
@@ -61,7 +62,7 @@ const Navbar = () => {
     const renderLinkSideBar = (link, Icon, name) => {
         const isActive = pathname.startsWith(link);
         return (
-            <div className="hover:text-[#e9ecef]">
+            <div className="hover:text-[#353839]">
                 <Link href={link}>
                         <div className={``}>
                             {name}
@@ -75,7 +76,7 @@ const Navbar = () => {
         <>
             {
                 !isDashboardRoute &&
-                <div className="absolute h-[11vh] px-5 w-[70%] flex justify-between items-center border-none rounded-3xl shadow my-[15px] bg-white/50">
+                <div className="absolute h-[10vh] px-10 w-[85%] flex justify-between items-center border-none rounded-3xl shadow my-[15px] bg-white/50">
                     <div
                         className="text-[30px] text-white cursor-pointer z-50"
                         onClick={() => router.push("/")}
@@ -90,23 +91,13 @@ const Navbar = () => {
                                 </React.Fragment>
                             ))}
                         </div>
-                        <div className={`montserrat-light flex text-[white] text-[15px] gap-[30px]`}>
-                            <Button
-                                onClick={() => router.push("/dashboard")}
-                                // onClick={()=>{setLoginModalOpen(true)}}
-                                type="text"
-                                style={{
-                                    width: 100,
-                                    height: 40,
-                                }}
-                                className="!rounded-2xl !text-white !border-none 
-                                            !bg-[#f6a542]
-                                            hover:!bg-black
-                                            !hover:opacity-90 !text-[18px]"
-                                >
-                                Login
-                            </Button>
-                        </div>
+                        <button
+                            onClick={() => router.push("/dashboard")}
+                            className="montserrat-light cursor-pointer flex h-[40px] items-center justify-center gap-1 rounded-2xl border-2 border-[#353839] px-3 text-center text-[#353839] transition-colors hover:bg-[#353839] hover:text-white"
+                        >
+                            <FiLogIn size={18} />
+                            <span>Login</span>
+                        </button>
                     </div>
                 </div>
             }

@@ -12,11 +12,13 @@ const ButtonPrimary = ({ onClick, text, width, height, loading }) => {
                 width,
                 height,
             }}
-            className="rounded-md px-10 py-1 !bg-[#003566] !text-white hover:!bg-[#001d3d] border-none"
-        >
+            className="rounded-md px-10 py-1 !bg-[#FA8500] !text-white hover:!bg-[#001d3d] border-none"
+        >   
             {text}
         </Button>
     );
 };
 
 export default ButtonPrimary;
+
+{/* #FA8500 003566*/}

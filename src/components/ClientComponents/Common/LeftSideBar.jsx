@@ -53,7 +53,7 @@ const LeftSidebar = () => {
         const isActive = pathname.startsWith(link);
         return (
             <Link href={link}>
-                <div className={`roboto-regular flex h-[40px] px-10 gap-3 justify-start items-center text-[white] hover:bg-[#1E293A] text-[14px]`}>
+                <div className={`roboto-regular flex h-[40px] px-5 mx-5 gap-3 justify-start items-center text-[white] hover:bg-[#FA8500] text-[14px] border-none rounded-xl`}> {/* #FA8500 1E293A */}
                     {
                         Icon && 
                         <>
@@ -87,22 +87,25 @@ const LeftSidebar = () => {
                     ))}
                 </div>
             </div>
-            <div className={``}>
-                <Link href={'/dashboard/setting'}>
-                    <div className={`flex h-[40px] px-10 gap-3 justify-start items-center text-[white] hover:bg-[#1E293A] text-[14px]`}>
-                        <IoSettingsOutline size={20}/>
-                        <div className={``}>
-                            Settings
-                        </div>
-                    </div>
+            <div className="flex flex-col gap-3 mx-5">
+                <Link
+                    href="/dashboard/setting"
+                    className="flex h-[40px] w-full items-center gap-3 rounded-xl px-5
+                            text-[14px] text-white transition-colors
+                            hover:bg-[#FA8500]"
+                >
+                    <IoSettingsOutline size={20} />
+                    <span>Settings</span>
                 </Link>
-                <Link href={'dashboard/logout'}>
-                    <div className={`flex h-[40px] px-10 gap-3 justify-start items-center text-[white] hover:bg-[#1E293A] text-[14px]`}>
-                        <IoIosLogOut size={20}/>
-                        <div className={``}>
-                            Logout
-                        </div>
-                    </div>
+
+                <Link
+                    href="/dashboard/logout"
+                    className="flex h-[40px] w-full items-center gap-3 rounded-xl px-5
+                            text-[14px] text-white transition-colors
+                            hover:bg-[#FA8500]"
+                >
+                    <IoIosLogOut size={20} />
+                    <span>Logout</span>
                 </Link>
             </div>
         </div>

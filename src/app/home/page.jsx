@@ -4,7 +4,7 @@ import HeroSection from "@/components/ClientComponents/Pages/HomePage/HeroSectio
 const page = () => {
     return (
         <>
-            <div className={`bg-amber-400 w-full min-h-screen`}>
+            <div className={`w-full min-h-screen`}>
                 <HeroSection />
             </div>
         </>
