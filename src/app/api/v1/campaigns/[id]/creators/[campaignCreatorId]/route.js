@@ -8,6 +8,8 @@ function jsonError(message, status) {
 
 const transitions = {
     invite: { from: ["Suggested"], to: "Invited" },
+    accept_application: { from: ["Applied"], to: "Accepted" },
+    decline_application: { from: ["Applied"], to: "Declined" },
     accept: { from: ["Invited"], to: "Accepted" },
     decline: { from: ["Invited"], to: "Declined" },
     submit_content: { from: ["Accepted", "ChangesRequested"], to: "ContentSubmitted" },
@@ -76,8 +78,8 @@ export async function PATCH(request, context) {
         const now = new Date();
         const data = { status: transition.to };
         if (body.action === "invite") data.invitedAt = now;
-        if (body.action === "accept") data.acceptedAt = now;
-        if (body.action === "decline") data.declinedAt = now;
+        if (["accept", "accept_application"].includes(body.action)) data.acceptedAt = now;
+        if (["decline", "decline_application"].includes(body.action)) data.declinedAt = now;
         if (body.action === "submit_content") {
             data.contentUrl = body.content_url.trim();
             data.contentNote = body.content_note?.trim() || null;
