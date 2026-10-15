@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getCurrentUser, requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 function jsonError(message, status) {
@@ -45,10 +46,20 @@ export async function PATCH(request, context) {
         return jsonError("Notes must be 2,000 characters or fewer.", 400);
     }
 
+    const isCreatorResponse = ["accept", "decline"].includes(body.action);
+    const auth = await requireRole(isCreatorResponse ? "CREATOR" : "BRAND");
+    if (auth.response) return auth.response;
+
     const transition = transitions[body.action];
     try {
         const link = await prisma.campaignCreator.findFirst({
-            where: { id: campaignCreatorId, campaignId },
+            where: {
+                id: campaignCreatorId,
+                campaignId,
+                ...(isCreatorResponse
+                    ? { creator: { ownerUserId: auth.user.id } }
+                    : { campaign: { ownerUserId: auth.user.id } }),
+            },
             select: { id: true, status: true },
         });
         if (!link) return jsonError("Campaign creator record not found.", 404);
