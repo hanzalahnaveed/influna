@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
 import { metricSnapshotSchema } from "@/lib/creators";
 import { prisma } from "@/lib/prisma";
+import { requireRole } from "@/lib/auth";
 
 function jsonError(message, status, details) {
     return NextResponse.json({ error: message, ...(details && { details }) }, { status });
 }
 
 export async function POST(request, context) {
+    const auth = await requireRole("CREATOR");
+    if (auth.response) return auth.response;
     const { id: socialAccountId } = await context.params;
     let body;
     try {
@@ -20,7 +23,7 @@ export async function POST(request, context) {
     const input = parsed.data;
 
     try {
-        const account = await prisma.socialAccount.findUnique({ where: { id: socialAccountId } });
+        const account = await prisma.socialAccount.findFirst({ where: { id: socialAccountId, creator: { ownerUserId: auth.user.id } } });
         if (!account) return jsonError("Social account not found.", 404);
 
         const snapshot = await prisma.socialAccountSnapshot.create({
