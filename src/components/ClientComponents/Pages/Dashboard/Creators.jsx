@@ -165,7 +165,7 @@ export default function CreatorDiscoveryPage() {
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                     <div>
                         <h2 className="text-lg font-semibold">Campaign matching</h2>
-                        <p className="mt-1 text-sm text-[#6B7280]">Rank listed creators by supported campaign targeting fields.</p>
+                        <p className="mt-1 text-sm text-[#6B7280]">Rank creators by category, location, language, platform, and available audience metrics.</p>
                     </div>
                     <div className="flex w-full flex-col gap-2 sm:flex-row lg:max-w-xl">
                         <select className={inputClass} value={selectedCampaign} onChange={(e) => { setSelectedCampaign(e.target.value); setMatches([]); }} aria-label="Select campaign">
@@ -185,6 +185,9 @@ export default function CreatorDiscoveryPage() {
                                         <h3 className="font-semibold">{match.display_name}</h3>
                                         <p className="mt-1 text-xs text-[#6B7280]">{[match.city, match.country].filter(Boolean).join(", ") || "Location not provided"} · {(match.categories || []).join(", ") || "No categories listed"}</p>
                                         <div className="mt-2 flex flex-wrap gap-2">{(match.social_accounts || []).map((account) => <span key={account.id} className="rounded-full bg-[#F3F4F6] px-2.5 py-1 text-xs text-[#495057]">{account.platform} · @{account.handle}</span>)}</div>
+                                        {(match.social_accounts || []).some((account) => account.latest_metrics) && <div className="mt-2 space-y-1 text-xs text-[#6B7280]">
+                                            {(match.social_accounts || []).filter((account) => account.latest_metrics).map((account) => <p key={account.id}>{account.platform}: {formatCount(account.latest_metrics.follower_count) || "Follower count unavailable"} followers{account.latest_metrics.engagement_rate !== null && account.latest_metrics.engagement_rate !== undefined ? ` · ${Number(account.latest_metrics.engagement_rate).toFixed(2)}% engagement` : ""} · {account.latest_metrics.data_source === "creator_provided" ? "creator-provided metrics" : "recorded metrics"}</p>)}
+                                        </div>}
                                     </div>
                                     <div className="flex shrink-0 flex-col items-stretch gap-2 sm:items-end">
                                         <div className="min-w-24 rounded-lg bg-[#FFF7ED] px-3 py-2 text-center">
