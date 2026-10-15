@@ -7,7 +7,7 @@ import Link from "next/link";
 import { MdOutlineSpaceDashboard, MdOutlineCampaign } from "react-icons/md";
 import { IoSettingsOutline } from "react-icons/io5";
 import { IoIosLogOut } from "react-icons/io";
-import { FiUsers, FiGitPullRequest, FiMail, FiUser, FiFileText, FiBriefcase, FiTruck } from "react-icons/fi";
+import { FiUsers, FiGitPullRequest, FiMail, FiUser, FiFileText, FiBriefcase, FiTruck, FiBarChart2 } from "react-icons/fi";
 
 const defaultMenu = [
     { id: 1, sidebar_name: "Dashboard", route: "/dashboard", icon: MdOutlineSpaceDashboard },
@@ -19,6 +19,7 @@ const defaultMenu = [
     { id: 7, sidebar_name: "Deliverables", route: "/dashboard/deliverables", icon: FiFileText },
     { id: 8, sidebar_name: "Explore Campaigns", route: "/dashboard/creator-campaigns", icon: FiBriefcase },
     { id: 9, sidebar_name: "Product Shipping", route: "/dashboard/shipping", icon: FiTruck },
+    { id: 10, sidebar_name: "Campaign Reports", route: "/dashboard/reports", icon: FiBarChart2 },
 ];
 
 const LeftSidebar = () => {
