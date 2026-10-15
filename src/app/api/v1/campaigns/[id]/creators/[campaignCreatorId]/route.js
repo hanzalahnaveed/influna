@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser, requireRole } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 function jsonError(message, status) {
