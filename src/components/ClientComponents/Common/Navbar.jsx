@@ -92,7 +92,7 @@ const Navbar = () => {
                             ))}
                         </div>
                         <button
-                            onClick={() => router.push("/dashboard")}
+                            onClick={() => router.push("/auth")}
                             className="montserrat-light cursor-pointer flex h-[40px] items-center justify-center gap-1 rounded-2xl border-2 border-[#353839] px-3 text-center text-[#353839] transition-colors hover:bg-[#353839] hover:text-white"
                         >
                             <FiLogIn size={18} />
