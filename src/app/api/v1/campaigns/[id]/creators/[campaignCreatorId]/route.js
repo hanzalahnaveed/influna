@@ -71,6 +71,49 @@ export async function PATCH(request, context) {
         if (!transition.from.includes(link.status)) {
             return jsonError(`Cannot perform "${body.action}" while status is "${link.status}".`, 409);
         }
+
+        // Do not cancel a collaboration after approved work or a shipment has
+        // reached the creator. Those records represent operational commitments
+        // that should not be silently invalidated by a status change.
+        if (body.action === "cancel") {
+            const [approvedDeliverables, shipment] = await Promise.all([
+                prisma.campaignDeliverable.count({
+                    where: { campaignCreatorId: link.id, status: "Approved" },
+                }),
+                prisma.campaignShipment.findUnique({
+                    where: { campaignCreatorId: link.id },
+                    select: { status: true },
+                }),
+            ]);
+            if (approvedDeliverables > 0) {
+                return jsonError("A collaboration with approved deliverables cannot be cancelled. Resolve the collaboration explicitly instead.", 409);
+            }
+            if (shipment && ["Delivered", "Received"].includes(shipment.status)) {
+                return jsonError("A collaboration cannot be cancelled after its shipment has been delivered. Resolve the shipment first.", 409);
+            }
+        }
+
+        // Completion is the final brand-side transition. If deliverables were
+        // defined, every one must be approved before the collaboration closes.
+        if (body.action === "complete") {
+            const [deliverableCount, unapprovedCount, shipment] = await Promise.all([
+                prisma.campaignDeliverable.count({ where: { campaignCreatorId: link.id } }),
+                prisma.campaignDeliverable.count({
+                    where: { campaignCreatorId: link.id, status: { not: "Approved" } },
+                }),
+                prisma.campaignShipment.findUnique({
+                    where: { campaignCreatorId: link.id },
+                    select: { status: true },
+                }),
+            ]);
+            if (deliverableCount > 0 && unapprovedCount > 0) {
+                return jsonError("All collaboration deliverables must be approved before completion.", 409);
+            }
+            if (shipment && shipment.status !== "Received") {
+                return jsonError("Confirm receipt of the product shipment before completing this collaboration.", 409);
+            }
+        }
+
         if (body.action === "submit_content" && !body.content_url?.trim()) {
             return jsonError("Provide content_url when submitting content.", 400);
         }
