@@ -1,24 +1,13 @@
 import { NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { campaignCreatorTransitions as transitions } from "@/lib/campaign-workflow.mjs";
 
 function jsonError(message, status) {
     return NextResponse.json({ error: message }, { status });
 }
 
-const transitions = {
-    invite: { from: ["Suggested"], to: "Invited" },
-    accept_application: { from: ["Applied"], to: "Accepted" },
-    decline_application: { from: ["Applied"], to: "Declined" },
-    withdraw_application: { from: ["Applied"], to: "Withdrawn" },
-    accept: { from: ["Invited"], to: "Accepted" },
-    decline: { from: ["Invited"], to: "Declined" },
-    submit_content: { from: ["Accepted", "ChangesRequested"], to: "ContentSubmitted" },
-    request_changes: { from: ["ContentSubmitted"], to: "ChangesRequested" },
-    approve_content: { from: ["ContentSubmitted"], to: "Approved" },
-    complete: { from: ["Approved"], to: "Completed" },
-    cancel: { from: ["Suggested", "Invited", "Accepted", "Declined", "ContentSubmitted", "ChangesRequested", "Approved"], to: "Cancelled" },
-};
+
 
 export async function PATCH(request, context) {
     const { id: campaignId, campaignCreatorId } = await context.params;
