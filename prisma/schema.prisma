@@ -74,6 +74,13 @@ model SocialAccount {
   dataSource       String                   @default("creator_provided")
   connectedAt      DateTime?
   verifiedAt       DateTime?
+  verificationStatus String                @default("UNVERIFIED")
+  verificationRequestedAt DateTime?
+  verificationRequestNote String?
+  verificationEvidenceUrl String?
+  verificationReviewedAt DateTime?
+  verificationReviewedByUserId String?
+  verificationReviewNote String?
   createdAt        DateTime                 @default(now())
   updatedAt        DateTime                 @updatedAt
   creator          CreatorProfile           @relation(fields: [creatorId], references: [id], onDelete: Cascade)
