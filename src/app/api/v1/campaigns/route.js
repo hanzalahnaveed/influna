@@ -6,12 +6,15 @@ import {
     serializeCampaign,
 } from "@/lib/campaigns";
 import { prisma } from "@/lib/prisma";
+import { requireRole } from "@/lib/auth";
 
 function jsonError(message, status, details) {
     return NextResponse.json({ error: message, ...(details && { details }) }, { status });
 }
 
 export async function GET(request) {
+    const auth = await requireRole("BRAND");
+    if (auth.response) return auth.response;
     const status = request.nextUrl.searchParams.get("status");
     if (status && !campaignStatusSchema.safeParse(status).success) {
         return jsonError("Invalid campaign status.", 400);
@@ -19,7 +22,7 @@ export async function GET(request) {
 
     try {
         const campaigns = await prisma.campaign.findMany({
-            where: status ? { status } : undefined,
+            where: { ownerUserId: auth.user.id, ...(status ? { status } : {}) },
             orderBy: { createdAt: "desc" },
         });
         return NextResponse.json(campaigns.map(serializeCampaign));
@@ -30,6 +33,8 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
+    const auth = await requireRole("BRAND");
+    if (auth.response) return auth.response;
     let body;
     try {
         body = await request.json();
@@ -61,6 +66,7 @@ export async function POST(request) {
     try {
         const created = await prisma.campaign.create({
             data: {
+                ownerUserId: auth.user.id,
                 campaignDetails: campaign.campaign_details,
                 targetingCriteria: campaign.targeting_criteria,
                 platformDetails: campaign.platform_details,
