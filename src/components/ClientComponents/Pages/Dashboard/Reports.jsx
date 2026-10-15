@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { FiBarChart2, FiCheckCircle, FiClock, FiRefreshCw, FiUsers, FiAlertTriangle } from "react-icons/fi";
+import { FiBarChart2, FiCheckCircle, FiClock, FiRefreshCw, FiUsers, FiAlertTriangle, FiTrendingUp } from "react-icons/fi";
 
 const secondary = "inline-flex items-center justify-center gap-2 rounded-lg border border-[#D9DEE7] bg-white px-3 py-2 text-sm font-semibold text-[#495057] transition hover:bg-[#F8F9FA] disabled:cursor-not-allowed disabled:opacity-50";
 
@@ -64,13 +64,16 @@ export default function CampaignReportsPage() {
 
         {loading && !report ? <div className="rounded-xl border border-[#E3E7ED] bg-white p-8 text-center text-sm text-[#6B7280]">Loading reports…</div> : null}
         {report && <>
-            <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+            <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <Metric label="Campaigns" value={totals.campaigns} hint="All campaigns you own" icon={FiBarChart2} />
                 <Metric label="Creator collaborations" value={totals.creators} hint="Unique campaign-creator records" icon={FiUsers} />
                 <Metric label="Completed collaborations" value={totals.completed_collaborations} hint={totals.active_collaborations + " currently in progress"} icon={FiCheckCircle} />
                 <Metric label="Overdue deliverables" value={totals.overdue_deliverables} hint="Past deadline and not approved" icon={FiAlertTriangle} warning={totals.overdue_deliverables > 0} />
                 <Metric label="Approved deliverables" value={totals.approved_deliverables} hint={totals.deliverables + " total deliverables"} icon={FiCheckCircle} />
                 <Metric label="On-time approval rate" value={totals.on_time_approval_rate === null ? "—" : totals.on_time_approval_rate + "%"} hint="Approved items with deadlines" icon={FiClock} />
+                <Metric label="Recorded impressions" value={totals.impressions} hint={number(totals.performance_snapshots) + " manual snapshots · may repeat reporting periods"} icon={FiBarChart2} />
+                <Metric label="Recorded engagements" value={totals.engagements} hint={number(totals.tracked_creators) + " creators with performance data"} icon={FiUsers} />
+                <Metric label="Clicks / conversions" value={totals.clicks} hint={number(totals.conversions) + " conversions recorded" } icon={FiTrendingUp} />
             </section>
 
             <section className="rounded-xl border border-[#E3E7ED] bg-white p-4 shadow-sm sm:p-5">
@@ -94,6 +97,16 @@ export default function CampaignReportsPage() {
                                 <div className="rounded-lg bg-amber-50 p-3"><p className="text-xs text-[#6B7280]">Planned / processing</p><p className="mt-1 text-sm font-semibold">{currencyTotalsLabel(campaign.commercials.planned_or_processing)}</p></div>
                                 <div className="rounded-lg bg-emerald-50 p-3"><p className="text-xs text-[#6B7280]">Marked paid manually</p><p className="mt-1 text-sm font-semibold">{currencyTotalsLabel(campaign.commercials.marked_paid)}</p><p className="mt-1 text-xs text-[#6B7280]">{campaign.commercials.payment_record_count} payment records</p></div>
                             </div>
+                        </div>
+                        <div className="mt-4 rounded-lg border border-[#E3E7ED] p-3">
+                            <div className="mb-3 flex items-center justify-between gap-2"><h4 className="text-sm font-semibold">Recorded campaign outcomes</h4><Link href="/dashboard/performance" className="text-xs font-semibold text-[#B85F00] hover:underline">Track performance →</Link></div>
+                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                                <div className="rounded-lg bg-slate-50 p-3"><p className="text-xs text-[#6B7280]">Impressions</p><p className="mt-1 text-lg font-bold">{number(campaign.performance.impressions)}</p></div>
+                                <div className="rounded-lg bg-slate-50 p-3"><p className="text-xs text-[#6B7280]">Reach</p><p className="mt-1 text-lg font-bold">{number(campaign.performance.reach)}</p></div>
+                                <div className="rounded-lg bg-slate-50 p-3"><p className="text-xs text-[#6B7280]">Engagements</p><p className="mt-1 text-lg font-bold">{number(campaign.performance.engagements)}</p></div>
+                                <div className="rounded-lg bg-slate-50 p-3"><p className="text-xs text-[#6B7280]">Clicks / conversions</p><p className="mt-1 text-lg font-bold">{number(campaign.performance.clicks)} / {number(campaign.performance.conversions)}</p></div>
+                            </div>
+                            <p className="mt-2 text-xs text-[#6B7280]">{campaign.performance.snapshot_count} manual snapshot(s) across {campaign.performance.tracked_creator_count} tracked creator(s). Totals may include repeated reporting periods.</p>
                         </div>
                         {campaign.deliverables.total > 0 ? <div className="mt-4"><div className="mb-1 flex items-center justify-between text-xs"><span className="font-medium text-[#495057]">Deliverable approval progress</span><span className="font-semibold">{campaign.deliverables.completion_rate}%</span></div><div className="h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-[#FA8500] transition-all" style={{ width: campaign.deliverables.completion_rate + "%" }} /></div><div className="mt-3 flex flex-wrap gap-2 text-xs"><span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">{campaign.deliverables.pending} pending</span><span className="rounded-full bg-sky-50 px-2.5 py-1 text-sky-700">{campaign.deliverables.submitted} submitted</span><span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-800">{campaign.deliverables.changes_requested} revisions</span><span className="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700">{campaign.deliverables.approved} approved</span></div></div> : <p className="mt-4 text-xs text-[#6B7280]">No deliverable requirements have been added to this campaign yet.</p>}
                     </article>)}
