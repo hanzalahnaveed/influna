@@ -12,6 +12,15 @@ function formatCount(value) {
     return Number.isFinite(number) ? new Intl.NumberFormat("en", { notation: number >= 10000 ? "compact" : "standard", maximumFractionDigits: 1 }).format(number) : null;
 }
 
+function freshnessLabel(value) {
+    return ({
+        recent: "Recent (≤30 days)",
+        aging: "Aging (31–90 days)",
+        stale: "Stale (>90 days)",
+        no_metrics: "No metrics",
+    })[value] || "Unknown";
+}
+
 export default function CreatorDiscoveryPage() {
     const [creators, setCreators] = useState([]);
     const [savedIds, setSavedIds] = useState(new Set());
@@ -243,6 +252,12 @@ export default function CreatorDiscoveryPage() {
                                     <div>
                                         <h3 className="font-semibold">{match.display_name}</h3>
                                         <span title={match.profile_source_description || ""} className={"mt-1 inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold " + (match.profile_source === "synthetic_dataset" ? "bg-violet-50 text-violet-800" : match.profile_source === "public_dataset_reference" ? "bg-sky-50 text-sky-800" : "bg-slate-100 text-slate-700")}>{match.profile_source_label || "Profile source unknown"}</span>
+                                        <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
+                                            <span className="rounded-md bg-slate-100 px-2 py-1 text-slate-700">Profile completeness: {match.data_quality?.profile_completeness_score ?? "—"}%</span>
+                                            <span className={"rounded-md px-2 py-1 " + (match.data_quality?.metrics_freshness === "recent" ? "bg-emerald-50 text-emerald-800" : match.data_quality?.metrics_freshness === "aging" ? "bg-amber-50 text-amber-800" : "bg-slate-100 text-slate-700")}>Metrics: {freshnessLabel(match.data_quality?.metrics_freshness)}</span>
+                                            <span className="rounded-md bg-slate-100 px-2 py-1 text-slate-700">Verified accounts: {match.data_quality?.verified_account_count ?? 0}/{match.data_quality?.social_account_count ?? 0}</span>
+                                        </div>
+                                        {(match.data_quality?.warnings || []).length > 0 && <p className="mt-1 text-xs text-[#8A4B08]">{match.data_quality.warnings.slice(0, 2).join(" ")}</p>}
                                         <p className="mt-1 text-xs text-[#6B7280]">{[match.city, match.country].filter(Boolean).join(", ") || "Location not provided"} · {(match.categories || []).join(", ") || "No categories listed"}</p>
                                         <div className="mt-2 flex flex-wrap gap-2">{(match.social_accounts || []).map((account) => <span key={account.id} className="rounded-full bg-[#F3F4F6] px-2.5 py-1 text-xs text-[#495057]">{account.platform} · @{account.handle}</span>)}</div>
                                         {(match.social_accounts || []).some((account) => account.latest_metrics) && <div className="mt-2 space-y-1 text-xs text-[#6B7280]">
@@ -299,6 +314,10 @@ export default function CreatorDiscoveryPage() {
                                         <div className="min-w-0 flex-1">
                                             <h3 className="truncate font-semibold">{creator.display_name}</h3>
                                             <span title={creator.profile_source_description || ""} className={"mt-1 inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold " + (creator.profile_source === "synthetic_dataset" ? "bg-violet-50 text-violet-800" : creator.profile_source === "public_dataset_reference" ? "bg-sky-50 text-sky-800" : "bg-slate-100 text-slate-700")}>{creator.profile_source_label || "Profile source unknown"}</span>
+                                            <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
+                                                <span className="rounded-md bg-slate-100 px-2 py-1 text-slate-700">Completeness: {creator.data_quality?.profile_completeness_score ?? "—"}%</span>
+                                                <span className={"rounded-md px-2 py-1 " + (creator.data_quality?.metrics_freshness === "recent" ? "bg-emerald-50 text-emerald-800" : creator.data_quality?.metrics_freshness === "aging" ? "bg-amber-50 text-amber-800" : "bg-slate-100 text-slate-700")}>Metrics: {freshnessLabel(creator.data_quality?.metrics_freshness)}</span>
+                                            </div>
                                             <p className="mt-0.5 flex items-center gap-1 text-xs text-[#6B7280]"><FiMapPin size={12} /> {[creator.city, creator.country].filter(Boolean).join(", ") || "Location not provided"}</p>
                                         </div>
                                         {matched && <span className="rounded-full bg-[#ECFDF3] px-2 py-1 text-[10px] font-semibold text-[#067647]">Matched</span>}
@@ -334,7 +353,7 @@ export default function CreatorDiscoveryPage() {
                     </div>
                 )}
             </section>
-            <p className="text-xs leading-5 text-[#9CA3AF]">Data quality note: creator-submitted profiles, public-dataset references, and synthetic benchmark profiles are labeled separately. Synthetic profiles are fictional and only for development/evaluation; dataset labels are not allegations about real creators. A source label is metadata, not proof of platform verification. Profile-fit scores do not predict reach, conversions, authenticity, or campaign success.</p>
+            <p className="text-xs leading-5 text-[#9CA3AF]">Data quality indicators summarize profile completeness, metric availability/recency, and account verification. “Recent” means within 30 days, “aging” 31–90 days, and “stale” more than 90 days. Verification applies to the social account status and does not independently establish audience authenticity. Creator-submitted profiles, public-dataset references, and synthetic benchmark profiles are labeled separately. Synthetic profiles are fictional and only for development/evaluation; dataset labels are not allegations about real creators. Profile-fit scores do not predict reach, conversions, authenticity, or campaign success.</p>
         </main>
     );
 }
