@@ -32,8 +32,34 @@ export const metricSnapshotSchema = z.object({
     raw_metrics: z.record(z.string(), z.unknown()).optional(),
 }).strict();
 
+export function getCreatorSource(creator) {
+    if (creator.ownerUserId) {
+        return { key: "creator_submitted", label: "Creator-submitted profile", description: "Profile information was submitted by the creator; social metrics may still be unverified." };
+    }
+
+    const accounts = creator.socialAccounts ?? [];
+    const sources = accounts.flatMap((account) => [
+        account.dataSource,
+        account.snapshots?.[0]?.dataSource,
+    ]).filter(Boolean);
+
+    if (sources.includes("synthetic_dataset")) {
+        return { key: "synthetic_dataset", label: "Synthetic benchmark profile", description: "Fictional benchmark data for development and evaluation; not a real creator or live platform metrics." };
+    }
+
+    if (sources.some((source) => source !== "creator_provided")) {
+        return { key: "public_dataset_reference", label: "Public-dataset reference", description: "Imported reference data from a dataset; not independently verified or live platform metrics." };
+    }
+
+    return { key: "creator_submitted", label: "Creator-submitted profile", description: "Profile information was submitted by the creator; social metrics may still be unverified." };
+}
+
 export function serializeCreator(creator, { includePrivateVerificationFeedback = false } = {}) {
+    const profileSource = getCreatorSource(creator);
     return {
+        profile_source: profileSource.key,
+        profile_source_label: profileSource.label,
+        profile_source_description: profileSource.description,
         id: creator.id,
         display_name: creator.displayName,
         bio: creator.bio,
