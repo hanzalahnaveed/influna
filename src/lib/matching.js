@@ -18,7 +18,7 @@ function accountMetrics(creator) {
 }
 
 function normalizedKey(value) {
-    return String(value ?? "").toLowerCase().replace(/[\\s\\-–—_]/g, "");
+    return String(value ?? "").toLowerCase().replace(/[\s\-–—_]/g, "");
 }
 
 function breakdownContains(breakdown, expected) {
