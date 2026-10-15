@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
+import { createNotification } from "@/lib/notifications";
 
 function jsonError(message, status) {
     return NextResponse.json({ error: message }, { status });
@@ -15,7 +16,7 @@ async function findOwnedLink(campaignId, campaignCreatorId, user) {
                 ? { campaign: { ownerUserId: user.id } }
                 : { creator: { ownerUserId: user.id } }),
         },
-        select: { id: true, status: true },
+        select: { id: true, status: true, creator: { select: { ownerUserId: true } }, campaign: { select: { ownerUserId: true, campaignDetails: true } } },
     });
 }
 
@@ -95,6 +96,13 @@ export async function POST(request, context) {
                 trackingUrl,
                 notes: body.notes?.trim() || null,
             },
+        });
+        await createNotification({
+            userId: link.creator.ownerUserId,
+            type: "SHIPMENT_CREATED",
+            title: "Product shipment registered",
+            message: `The brand added shipment tracking for ${link.campaign.campaignDetails?.campaign_title || "your collaboration"}.`,
+            href: "/dashboard/commercials",
         });
         return NextResponse.json({ shipment: serializeShipment(item) }, { status: 201 });
     } catch (error) {
