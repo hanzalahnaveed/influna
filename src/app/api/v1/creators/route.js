@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { creatorInputSchema, serializeCreator } from "@/lib/creators";
 import { prisma } from "@/lib/prisma";
+import { requireRole } from "@/lib/auth";
 
 function jsonError(message, status, details) {
     return NextResponse.json({ error: message, ...(details && { details }) }, { status });
@@ -46,6 +47,8 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
+    const auth = await requireRole("CREATOR");
+    if (auth.response) return auth.response;
     let body;
     try {
         body = await request.json();
@@ -66,7 +69,8 @@ export async function POST(request) {
                 country: input.country ?? null,
                 city: input.city ?? null,
                 languages: input.languages ?? [],
-                isPublic: input.is_public ?? true,
+                isPublic: input.is_public ?? false,
+                ownerUserId: auth.user.id,
                 socialAccounts: input.social_accounts?.length ? {
                     create: input.social_accounts.map((account) => ({
                         platform: account.platform,
