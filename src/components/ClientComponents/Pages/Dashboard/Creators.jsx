@@ -214,7 +214,7 @@ export default function CreatorDiscoveryPage() {
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                     <div>
                         <h2 className="text-lg font-semibold">Campaign matching</h2>
-                        <p className="mt-1 text-sm text-[#6B7280]">Rank creators by category, location, language, platform, and available audience metrics.</p>
+                        <p className="mt-1 text-sm text-[#6B7280]">Compare creator profiles against campaign objectives, category, location, language, platforms, and available audience metrics. Each result explains fit and data coverage.</p>
                     </div>
                     <div className="flex w-full flex-col gap-2 sm:flex-row lg:max-w-xl">
                         <select className={inputClass} value={selectedCampaign} onChange={(e) => { setSelectedCampaign(e.target.value); setMatches([]); }} aria-label="Select campaign">
@@ -241,8 +241,10 @@ export default function CreatorDiscoveryPage() {
                                     <div className="flex shrink-0 flex-col items-stretch gap-2 sm:items-end">
                                         <div className="min-w-24 rounded-lg bg-[#FFF7ED] px-3 py-2 text-center">
                                             <div className="text-xl font-bold text-[#C66A00]">{match.match_score}%</div>
-                                            <div className="text-[10px] font-semibold uppercase tracking-wide text-[#8A4B08]">Profile fit</div>
+                                            <div className="text-[10px] font-semibold uppercase tracking-wide text-[#8A4B08]">Profile fit · not a forecast</div>
                                         </div>
+                                        <span className={"rounded-full px-3 py-1.5 text-center text-xs font-semibold " + (match.recommendation_tier === "strong_fit" ? "bg-emerald-50 text-emerald-800" : match.recommendation_tier === "promising_fit" ? "bg-blue-50 text-blue-800" : match.recommendation_tier === "insufficient_data" ? "bg-amber-50 text-amber-800" : "bg-slate-100 text-slate-700")}>{match.recommendation_label || "Preliminary fit"}</span>
+                                        <span className="text-[11px] text-[#6B7280]">Data coverage: {match.match_confidence ?? "—"}%</span>
                                         {match.status === "Suggested" ? (
                                             <button className={primaryButton} type="button" disabled={invitingId === match.campaign_creator_id} onClick={() => recordInvitation(match)}>
                                                 {invitingId === match.campaign_creator_id ? "Recording..." : "Record invite"}
@@ -252,7 +254,10 @@ export default function CreatorDiscoveryPage() {
                                         )}
                                     </div>
                                 </div>
+                                {match.note && <p className="mt-3 text-xs leading-5 text-[#6B7280]">{match.note}</p>}
+                                {match.match_factors?.length > 0 && <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{match.match_factors.map((factor) => <div key={factor.key} className="rounded-lg bg-slate-50 p-2.5"><div className="flex items-center justify-between gap-2"><span className="text-xs font-medium text-[#495057]">{factor.label}</span><span className="text-xs font-semibold text-[#495057]">{factor.score}%</span></div><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200"><div className="h-full rounded-full bg-[#FA8500]" style={{ width: factor.score + "%" }} /></div></div>)}</div>}
                                 {match.match_reasons?.length > 0 && <ul className="mt-3 list-inside list-disc space-y-1 text-xs text-[#495057]">{match.match_reasons.map((reason, index) => <li key={index}>{reason}</li>)}</ul>}
+                                {match.missing_data?.length > 0 && <details className="mt-3 rounded-lg border border-[#E3E7ED] px-3 py-2"><summary className="cursor-pointer text-xs font-semibold text-[#495057]">Data gaps to review ({match.missing_data.length})</summary><ul className="mt-2 list-inside list-disc space-y-1 text-xs text-[#6B7280]">{match.missing_data.map((gap, index) => <li key={index}>{gap}</li>)}</ul></details>}
                             </article>
                         ))}
                     </div>
