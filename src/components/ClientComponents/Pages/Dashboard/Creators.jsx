@@ -270,7 +270,9 @@ export default function CreatorDiscoveryPage() {
                                             <div className="text-[10px] font-semibold uppercase tracking-wide text-[#8A4B08]">Profile fit · not a forecast</div>
                                         </div>
                                         <span className={"rounded-full px-3 py-1.5 text-center text-xs font-semibold " + (match.recommendation_tier === "strong_fit" ? "bg-emerald-50 text-emerald-800" : match.recommendation_tier === "promising_fit" ? "bg-blue-50 text-blue-800" : match.recommendation_tier === "insufficient_data" ? "bg-amber-50 text-amber-800" : "bg-slate-100 text-slate-700")}>{match.recommendation_label || "Preliminary fit"}</span>
-                                        <span className="text-[11px] text-[#6B7280]">Data coverage: {match.match_confidence ?? "—"}%</span>
+                                        <span className="text-[11px] text-[#6B7280]">Criteria coverage: {match.criteria_coverage ?? "—"}%</span>
+                                        <span title="Confidence accounts for criteria coverage, profile completeness, metric freshness, verification, and data source." className="text-[11px] text-[#6B7280]">Match confidence: {match.match_confidence ?? "—"}%</span>
+                                        {match.data_quality_confidence !== undefined && <span className="text-[11px] text-[#6B7280]">Data quality factor: {match.data_quality_confidence}%</span>}
                                         {match.status === "Suggested" ? (
                                             <button className={primaryButton} type="button" disabled={invitingId === match.campaign_creator_id} onClick={() => recordInvitation(match)}>
                                                 {invitingId === match.campaign_creator_id ? "Recording..." : "Record invite"}
@@ -353,7 +355,7 @@ export default function CreatorDiscoveryPage() {
                     </div>
                 )}
             </section>
-            <p className="text-xs leading-5 text-[#9CA3AF]">Data quality indicators summarize profile completeness, metric availability/recency, and account verification. “Recent” means within 30 days, “aging” 31–90 days, and “stale” more than 90 days. Verification applies to the social account status and does not independently establish audience authenticity. Creator-submitted profiles, public-dataset references, and synthetic benchmark profiles are labeled separately. Synthetic profiles are fictional and only for development/evaluation; dataset labels are not allegations about real creators. Profile-fit scores do not predict reach, conversions, authenticity, or campaign success.</p>
+            <p className="text-xs leading-5 text-[#9CA3AF]">Data quality indicators summarize profile completeness, metric availability/recency, and account verification. “Recent” means within 30 days, “aging” 31–90 days, and “stale” more than 90 days. Verification applies to the social account status and does not independently establish audience authenticity. Creator-submitted profiles, public-dataset references, and synthetic benchmark profiles are labeled separately. Synthetic profiles are fictional and only for development/evaluation; dataset labels are not allegations about real creators. Match confidence is adjusted for data completeness, metric freshness, verification status when metrics are used, and source reliability; missing profile fields do not directly reduce profile-fit scores. Synthetic benchmark confidence is capped because those profiles are fictional. Profile-fit scores do not predict reach, conversions, authenticity, or campaign success.</p>
         </main>
     );
 }
