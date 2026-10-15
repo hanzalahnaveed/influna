@@ -85,8 +85,8 @@ export async function POST(request, context) {
     try {
         const link = await findOwnedLink(campaignId, campaignCreatorId, auth.user);
         if (!link) return jsonError("Campaign collaboration not found.", 404);
-        if (["Declined", "Cancelled", "Completed"].includes(link.status)) {
-            return jsonError("Cannot add deliverables to a declined, cancelled, or completed collaboration.", 409);
+        if (link.status !== "Accepted") {
+            return jsonError("Deliverables can only be defined after the creator accepts the collaboration.", 409);
         }
         const item = await prisma.campaignDeliverable.create({
             data: {
