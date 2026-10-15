@@ -6,6 +6,7 @@ ALTER TABLE "CampaignCreator"
   ADD COLUMN "feeCurrency" TEXT NOT NULL DEFAULT 'USD',
   ADD COLUMN "paymentTerms" TEXT,
   ADD COLUMN "proposalNote" TEXT,
+  ADD COLUMN "counterNote" TEXT,
   ADD COLUMN "proposalSentAt" TIMESTAMP(3),
   ADD COLUMN "proposalRespondedAt" TIMESTAMP(3);
 
