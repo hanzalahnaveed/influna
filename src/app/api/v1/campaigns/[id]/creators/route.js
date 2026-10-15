@@ -17,6 +17,7 @@ export async function GET(_request, context) {
         const links = await prisma.campaignCreator.findMany({
             where: { campaignId },
             include: {
+                _count: { select: { deliverables: true } },
                 creator: {
                     include: {
                         socialAccounts: {
@@ -43,6 +44,7 @@ export async function GET(_request, context) {
                 languages: link.creator.languages,
                 social_accounts: link.creator.socialAccounts,
                 status: link.status,
+                deliverable_count: link._count.deliverables,
                 match_score: link.matchScore,
                 match_reasons: link.matchReasons,
                 invited_at: link.invitedAt?.toISOString() ?? null,
