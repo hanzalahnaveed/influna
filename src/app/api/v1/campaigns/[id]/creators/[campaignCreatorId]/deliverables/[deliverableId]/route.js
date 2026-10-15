@@ -75,7 +75,17 @@ export async function PATCH(request, context) {
                 return jsonError("This deliverable is not accepting a submission right now.", 409);
             }
             const submission = await prisma.$transaction(async (tx) => {
-                const created = await tx.deliverableSubmission.create({
+                // Claim the pending/revision state before creating a version. Concurrent
+                // submissions then cannot create the same version or overwrite each other.
+                const claimed = await tx.campaignDeliverable.updateMany({
+                    where: {
+                        id: deliverable.id,
+                        status: { in: ["Pending", "ChangesRequested"] },
+                    },
+                    data: { status: "Submitted" },
+                });
+                if (claimed.count !== 1) throw new Error("DELIVERABLE_STATE_CONFLICT");
+                return tx.deliverableSubmission.create({
                     data: {
                         deliverableId: deliverable.id,
                         version: (latest?.version ?? 0) + 1,
@@ -85,11 +95,6 @@ export async function PATCH(request, context) {
                         submittedAt: now,
                     },
                 });
-                await tx.campaignDeliverable.update({
-                    where: { id: deliverable.id },
-                    data: { status: "Submitted" },
-                });
-                return created;
             });
             return NextResponse.json({
                 deliverable_id: deliverable.id,
@@ -109,48 +114,54 @@ export async function PATCH(request, context) {
             return jsonError("Only the latest pending submission can be reviewed.", 409);
         }
         const nextStatus = action === "approve" ? "Approved" : "ChangesRequested";
-        const result = await prisma.$transaction(async (tx) => {
-            const submission = await tx.deliverableSubmission.update({
-                where: { id: latest.id },
+        const updated = await prisma.$transaction(async (tx) => {
+            // Only one reviewer can claim the submitted state. This prevents an
+            // approval and a revision request from racing and overwriting each other.
+            const claimed = await tx.campaignDeliverable.updateMany({
+                where: { id: deliverable.id, status: "Submitted" },
+                data: { status: nextStatus },
+            });
+            if (claimed.count !== 1) throw new Error("DELIVERABLE_STATE_CONFLICT");
+            const submissionUpdate = await tx.deliverableSubmission.updateMany({
+                where: { id: latest.id, status: "Submitted" },
                 data: {
                     status: nextStatus,
                     reviewNote: body.review_note?.trim() || null,
                     reviewedAt: now,
                 },
             });
-            await tx.campaignDeliverable.update({
-                where: { id: deliverable.id },
-                data: { status: nextStatus },
-            });
+            if (submissionUpdate.count !== 1) throw new Error("SUBMISSION_STATE_CONFLICT");
+            return tx.deliverableSubmission.findUnique({ where: { id: latest.id } });
+        });
 
-            let collaborationStatus = deliverable.campaignCreator.status;
-            if (action === "approve") {
-                const remaining = await tx.campaignDeliverable.count({
-                    where: {
-                        campaignCreatorId,
-                        status: { not: "Approved" },
+        // Reconcile collaboration completion after the deliverable transaction commits.
+        // Checking outside that transaction avoids two final approvals each seeing the
+        // other's uncommitted deliverable and leaving the collaboration stuck as Accepted.
+        let collaborationStatus = deliverable.campaignCreator.status;
+        if (action === "approve") {
+            const remaining = await prisma.campaignDeliverable.count({
+                where: { campaignCreatorId, status: { not: "Approved" } },
+            });
+            if (remaining === 0) {
+                await prisma.campaignCreator.updateMany({
+                    where: { id: campaignCreatorId, status: "Accepted" },
+                    data: {
+                        status: "Approved",
+                        reviewNote: body.review_note?.trim() || null,
+                        reviewedAt: now,
                     },
                 });
-                if (remaining === 0) {
-                    const collaboration = await tx.campaignCreator.update({
-                        where: { id: campaignCreatorId },
-                        data: {
-                            status: "Approved",
-                            reviewNote: body.review_note?.trim() || null,
-                            reviewedAt: now,
-                        },
-                        select: { status: true },
-                    });
-                    collaborationStatus = collaboration.status;
-                }
             }
-            return { submission, collaborationStatus };
-        });
-        const updated = result.submission;
+            const collaboration = await prisma.campaignCreator.findUnique({
+                where: { id: campaignCreatorId },
+                select: { status: true },
+            });
+            collaborationStatus = collaboration?.status ?? collaborationStatus;
+        }
         return NextResponse.json({
             deliverable_id: deliverable.id,
             status: nextStatus,
-            collaboration_status: result.collaborationStatus,
+            collaboration_status: collaborationStatus,
             submission: {
                 id: updated.id,
                 version: updated.version,
@@ -163,6 +174,9 @@ export async function PATCH(request, context) {
             },
         });
     } catch (error) {
+        if (["DELIVERABLE_STATE_CONFLICT", "SUBMISSION_STATE_CONFLICT"].includes(error?.message)) {
+            return jsonError("This deliverable changed while the request was being processed. Refresh and try again.", 409);
+        }
         console.error("Failed to update deliverable:", error);
         return jsonError("Unable to update deliverable.", 500);
     }
