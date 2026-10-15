@@ -91,7 +91,7 @@ export async function POST(request) {
             },
             include: creatorInclude,
         });
-        return NextResponse.json(serializeCreator(creator), { status: 201 });
+        return NextResponse.json(serializeCreator(creator, { includePrivateVerificationFeedback: true }), { status: 201 });
     } catch (error) {
         if (error?.code === "P2002") return jsonError("That social platform and handle are already registered.", 409);
         console.error("Failed to create creator:", error);
