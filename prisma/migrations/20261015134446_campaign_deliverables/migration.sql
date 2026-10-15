@@ -1,2 +1,2 @@
 -- DropIndex
-DROP INDEX "Campaign_ownerUserId_idx";
+DROP INDEX IF EXISTS "Campaign_ownerUserId_idx";
