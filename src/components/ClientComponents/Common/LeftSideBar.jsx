@@ -48,6 +48,7 @@ const LeftSidebar = () => {
                         : currentRole === "BRAND" ? defaultMenu.filter((item) => ![5, 6, 8].includes(item.id))
                         : currentRole === "ADMIN" ? [
                             { id: 11, sidebar_name: "Creator Verification", route: "/dashboard/admin-verification", icon: FiShield },
+                            { id: 13, sidebar_name: "Integration Readiness", route: "/dashboard/admin-integrations", icon: FiGitPullRequest },
                         ] : []);
                 }
             } catch {
