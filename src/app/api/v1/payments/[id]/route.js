@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { createNotification } from "@/lib/notifications";
 
 const statuses = new Set(["PLANNED", "PROCESSING", "PAID", "CANCELLED"]);
 const jsonError = (error, status) => NextResponse.json({ error }, { status });
@@ -18,7 +19,7 @@ export async function PATCH(request, context) {
     try {
         const existing = await prisma.campaignPaymentRecord.findFirst({
             where: { id, campaignCreator: { campaign: { ownerUserId: user.id } } },
-            include: { campaignCreator: { select: { id: true, campaignId: true, status: true, campaign: { select: { campaignDetails: true } }, creator: { select: { displayName: true } } } } },
+            include: { campaignCreator: { select: { id: true, campaignId: true, status: true, campaign: { select: { campaignDetails: true } }, creator: { select: { displayName: true, ownerUserId: true } } } } },
         });
         if (!existing) return jsonError("Payment record not found.", 404);
         if (["PAID", "CANCELLED"].includes(existing.status) && body.status !== existing.status) return jsonError("Paid and cancelled payment records are final and cannot be reopened.", 409);
@@ -33,6 +34,17 @@ export async function PATCH(request, context) {
                 },
                 include: { campaignCreator: { include: { campaign: { select: { campaignDetails: true } }, creator: { select: { displayName: true } } } } },
             });
+            if (updated.status !== existing.status) {
+                const campaignTitle = updated.campaignCreator.campaign.campaignDetails?.campaign_title || "your campaign collaboration";
+                const isPaid = updated.status === "PAID";
+                await createNotification({
+                    userId: updated.campaignCreator.creator.ownerUserId,
+                    type: isPaid ? "PAYMENT_PAID" : updated.status === "PROCESSING" ? "PAYMENT_PROCESSING" : "PAYMENT_CANCELLED",
+                    title: isPaid ? "Payment marked as paid" : updated.status === "PROCESSING" ? "Payment processing started" : "Payment record cancelled",
+                    message: `${updated.currency} ${Number(updated.amount).toFixed(2)} for ${campaignTitle} is now ${updated.status.toLowerCase()}.`,
+                    href: "/dashboard/commercials",
+                });
+            }
             return NextResponse.json({
                 id: updated.id, campaign_creator_id: updated.campaignCreatorId, campaign_id: updated.campaignCreator.campaignId,
                 campaign_title: updated.campaignCreator.campaign.campaignDetails?.campaign_title || "Untitled campaign",
