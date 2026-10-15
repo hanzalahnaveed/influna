@@ -8,14 +8,99 @@ datasource db {
 }
 
 model Campaign {
-  id                 String   @id @default(cuid())
-  campaignDetails    Json     @default("{}")
-  targetingCriteria  Json     @default("{}")
-  platformDetails    Json     @default("{}")
-  paymentInformation Json     @default("{}")
-  status             String   @default("Active")
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-
+  id                 String            @id @default(cuid())
+  campaignDetails    Json              @default("{}")
+  targetingCriteria  Json              @default("{}")
+  platformDetails    Json              @default("{}")
+  paymentInformation Json              @default("{}")
+  status             String            @default("Active")
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  creatorLinks       CampaignCreator[]
   @@index([status, createdAt])
+}
+
+model CreatorProfile {
+  id            String            @id @default(cuid())
+  displayName   String
+  bio           String?
+  categories    String[]          @default([])
+  country       String?
+  city          String?
+  languages     String[]          @default([])
+  isPublic      Boolean           @default(true)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  socialAccounts SocialAccount[]
+  campaignLinks CampaignCreator[]
+  @@index([isPublic, createdAt])
+  @@index([country, city])
+}
+
+model SocialAccount {
+  id               String                   @id @default(cuid())
+  creatorId        String
+  platform         String
+  handle           String
+  profileUrl       String?
+  dataSource       String                   @default("creator_provided")
+  connectedAt      DateTime?
+  verifiedAt       DateTime?
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+  creator          CreatorProfile           @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  snapshots        SocialAccountSnapshot[]
+  audienceInsights AudienceInsight[]
+  @@unique([platform, handle])
+  @@index([creatorId, platform])
+}
+
+model SocialAccountSnapshot {
+  id              String        @id @default(cuid())
+  socialAccountId String
+  observedAt      DateTime      @default(now())
+  dataSource      String
+  followerCount   Int?
+  followingCount  Int?
+  postCount       Int?
+  averageViews    Float?
+  averageLikes    Float?
+  averageComments Float?
+  engagementRate  Float?
+  rawMetrics      Json          @default("{}")
+  createdAt       DateTime      @default(now())
+  socialAccount   SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+  @@index([socialAccountId, observedAt])
+  @@index([dataSource, observedAt])
+}
+
+model AudienceInsight {
+  id               String        @id @default(cuid())
+  socialAccountId  String
+  observedAt       DateTime      @default(now())
+  dataSource       String
+  countryBreakdown Json          @default("{}")
+  ageBreakdown     Json          @default("{}")
+  genderBreakdown  Json          @default("{}")
+  createdAt        DateTime      @default(now())
+  socialAccount    SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+  @@index([socialAccountId, observedAt])
+}
+
+model CampaignCreator {
+  id           String         @id @default(cuid())
+  campaignId   String
+  creatorId    String
+  status       String         @default("Suggested")
+  matchScore   Float?
+  matchReasons Json           @default("[]")
+  invitedAt    DateTime?
+  acceptedAt   DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  campaign     Campaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  creator      CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  @@unique([campaignId, creatorId])
+  @@index([campaignId, status])
+  @@index([creatorId, status])
 }
