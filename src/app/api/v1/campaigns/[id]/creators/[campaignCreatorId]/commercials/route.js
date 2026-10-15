@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { createNotification } from "@/lib/notifications";
 
 const currencies = new Set(["USD", "PKR", "GBP", "EUR", "AED", "SAR", "INR", "CAD", "AUD"]);
 const jsonError = (error, status) => NextResponse.json({ error }, { status });
@@ -33,8 +34,8 @@ async function getOwnedLink(campaignId, campaignCreatorId, user) {
             ...(user.role === "BRAND" ? { campaign: { ownerUserId: user.id } } : { creator: { ownerUserId: user.id } }),
         },
         include: {
-            campaign: { select: { campaignDetails: true } },
-            creator: { select: { displayName: true } },
+            campaign: { select: { ownerUserId: true, campaignDetails: true } },
+            creator: { select: { ownerUserId: true, displayName: true } },
         },
     });
 }
@@ -97,7 +98,17 @@ export async function PATCH(request, context) {
             return jsonError("This action is not permitted for your role or current proposal status.", 403);
         }
 
-        const updated = await prisma.campaignCreator.update({ where: { id: link.id }, data, include: { campaign: { select: { campaignDetails: true } }, creator: { select: { displayName: true } } } });
+        const updated = await prisma.campaignCreator.update({ where: { id: link.id }, data, include: { campaign: { select: { ownerUserId: true, campaignDetails: true } }, creator: { select: { ownerUserId: true, displayName: true } } } });
+        const campaignTitle = updated.campaign?.campaignDetails?.campaign_title || "Untitled campaign";
+        const notificationByAction = {
+            send_offer: { userId: updated.creator?.ownerUserId, type: "commercial_offer", title: "New creator offer", message: "A brand sent you an offer for “" + campaignTitle + "”." },
+            accept_offer: { userId: updated.campaign?.ownerUserId, type: "commercial_response", title: "Offer accepted", message: (updated.creator?.displayName || "The creator") + " accepted your offer for “" + campaignTitle + "”." },
+            reject_offer: { userId: updated.campaign?.ownerUserId, type: "commercial_response", title: "Offer declined", message: (updated.creator?.displayName || "The creator") + " declined your offer for “" + campaignTitle + "”." },
+            counter_offer: { userId: updated.campaign?.ownerUserId, type: "commercial_counteroffer", title: "Counteroffer received", message: (updated.creator?.displayName || "The creator") + " sent a counteroffer for “" + campaignTitle + "”." },
+            accept_counter: { userId: updated.creator?.ownerUserId, type: "commercial_response", title: "Counteroffer accepted", message: "Your counteroffer for “" + campaignTitle + "” was accepted." },
+        };
+        const notification = notificationByAction[body.action];
+        if (notification) await createNotification({ ...notification, href: "/dashboard/commercials" });
         return NextResponse.json(serialize(updated));
     } catch (error) {
         console.error("Failed to update commercial terms:", error);
