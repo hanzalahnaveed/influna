@@ -6,13 +6,14 @@ import { FiDollarSign, FiPlus, FiRefreshCw, FiTrash2 } from "react-icons/fi";
 const field = "w-full rounded-lg border border-[#D9DEE7] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#FA8500]";
 const primary = "inline-flex items-center justify-center gap-2 rounded-lg bg-[#FA8500] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#e87900] disabled:opacity-50";
 const secondary = "inline-flex items-center justify-center gap-2 rounded-lg border border-[#D9DEE7] bg-white px-3 py-2 text-sm font-semibold text-[#495057] hover:bg-slate-50 disabled:opacity-50";
+const availablePlatforms = ["Instagram", "TikTok", "YouTube", "Facebook", "Other"];
+const availableCurrencies = ["USD", "PKR", "GBP", "EUR", "AED", "SAR", "INR", "CAD", "AUD"];
 const initial = { platform: "Instagram", deliverable_type: "1 Reel", price: "", currency: "USD", notes: "", is_public: true };
-function money(amount, currency) { try { return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(Number(amount)); } catch { return `${currency} ${amount}`; } }
 
 export default function CreatorRateCardPage() {
     const [cards, setCards] = useState([]);
-    const [platforms, setPlatforms] = useState(["Instagram", "TikTok", "YouTube", "Facebook", "Other"]);
-    const [currencies, setCurrencies] = useState(["USD", "PKR", "GBP", "EUR", "AED", "SAR", "INR", "CAD", "AUD"]);
+    const [platforms, setPlatforms] = useState(availablePlatforms);
+    const [currencies, setCurrencies] = useState(availableCurrencies);
     const [form, setForm] = useState(initial);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -26,7 +27,7 @@ export default function CreatorRateCardPage() {
             const response = await fetch("/api/v1/creator/rate-cards", { cache: "no-store" });
             const data = await response.json();
             if (!response.ok) throw new Error(data?.error || "Could not load rate cards.");
-            setCards(data.rate_cards || []); setPlatforms(data.platforms || platforms); setCurrencies(data.currencies || currencies);
+            setCards(data.rate_cards || []); setPlatforms(data.platforms || availablePlatforms); setCurrencies(data.currencies || availableCurrencies);
         } catch (err) { setError(err.message || "Could not load rate cards."); }
         finally { setLoading(false); }
     }, []);
