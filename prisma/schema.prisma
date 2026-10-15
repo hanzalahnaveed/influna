@@ -136,6 +136,7 @@ model CampaignCreator {
   feeCurrency String            @default("USD")
   paymentTerms String?
   proposalNote String?
+  counterNote String?
   proposalSentAt DateTime?
   proposalRespondedAt DateTime?
   invitedAt    DateTime?
