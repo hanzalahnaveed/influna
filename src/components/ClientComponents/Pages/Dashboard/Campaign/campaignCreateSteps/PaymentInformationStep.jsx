@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Input, Select, Form, Button, Space } from 'antd';
+import { Input, InputNumber, Select, Form, Button, Space } from 'antd';
 import ButtonPrimary from '@/components/ReusableComponents/CustomButton/ButtonPrimary';
 import ButtonSecondary from '@/components/ReusableComponents/CustomButton/ButtonSecondary';
 
@@ -246,7 +246,16 @@ const PaymentInformationStep = (props) => {
     return (
         <div className="flex flex-col min-h-full gap-4">
             <div className="bg-white border p-6 rounded-lg shadow">
-                <div className={headingClass}>Select Payment Model</div>
+                <div className={headingClass}>Campaign Budget & Payment Model</div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <Form.Item name="campaign_budget" label={<span className={labelClass}>Total campaign budget (optional)</span>} rules={[{ type: "number", min: 0, message: "Budget must be zero or greater." }]}>
+                        <InputNumber min={0} precision={2} placeholder="e.g. 250000" style={{ width: "100%" }} />
+                    </Form.Item>
+                    <Form.Item name="budget_currency" label={<span className={labelClass}>Budget currency</span>} initialValue="USD">
+                        <Select options={["USD", "PKR", "GBP", "EUR", "AED", "SAR", "INR", "CAD", "AUD"].map(value => ({ label: value, value }))} />
+                    </Form.Item>
+                </div>
+                <p className="mb-3 text-xs text-gray-500">Budget fit uses public creator rate cards in the same currency. It is an estimate, not a negotiated quote or currency conversion.</p>
                 {renderSelectWithDetail('campaign_payment_model', 'Payment Model', paymentMethodOptions, () => setPerformanceModel(null))}
                 {renderConditionalFields()}
             </div>

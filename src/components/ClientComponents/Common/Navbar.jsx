@@ -76,7 +76,7 @@ const Navbar = () => {
         <>
             {
                 !isDashboardRoute &&
-                <div className="absolute h-[10vh] px-10 w-[85%] flex justify-between items-center border-none rounded-3xl shadow my-[15px] bg-white/50">
+                <div className="absolute h-[10vh] px-10 w-[85%] flex justify-between items-center border-none rounded-3xl shadow my-[15px] bg-white/60">
                     <div
                         className="text-[30px] text-white cursor-pointer z-50"
                         onClick={() => router.push("/")}
@@ -92,7 +92,7 @@ const Navbar = () => {
                             ))}
                         </div>
                         <button
-                            onClick={() => router.push("/dashboard")}
+                            onClick={() => router.push("/auth")}
                             className="montserrat-light cursor-pointer flex h-[40px] items-center justify-center gap-1 rounded-2xl border-2 border-[#353839] px-3 text-center text-[#353839] transition-colors hover:bg-[#353839] hover:text-white"
                         >
                             <FiLogIn size={18} />

@@ -1,11 +1,5 @@
-import NewHome from "@/app/home/page";
-import TopBar from "@/components/ClientComponents/Common/TopBar";
+import HeroSection from "@/components/ClientComponents/Pages/HomePage/HeroSection";
 
 export default function Home() {
-    return (
-        <div className="flex flex-col items-center">
-            {/* <TopBar/> */}
-            <NewHome />
-        </div>
-    );
+    return <HeroSection />;
 }

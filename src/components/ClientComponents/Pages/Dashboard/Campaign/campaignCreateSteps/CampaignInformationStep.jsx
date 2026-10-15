@@ -117,6 +117,39 @@ const CampaignInformationStep = (props) => {
                     {renderSelect('campaign_age_range', 'Age Range', ageOptions)}
                     {renderSelect('campaign_gender', 'Gender', genderOptions)}
                     {renderSelect('campaign_interest', 'Interest', interestOptions)}
+                    <Form.Item
+                        label={<span className={labelClass}>Minimum followers (optional)</span>}
+                        name="min_followers"
+                        style={{ marginBottom: 0, width: '100%' }}
+                        extra="Use this to focus on creators with a minimum audience size."
+                    >
+                        <Input type="number" min={0} placeholder="e.g. 10000" />
+                    </Form.Item>
+                    <Form.Item
+                        label={<span className={labelClass}>Maximum followers (optional)</span>}
+                        name="max_followers"
+                        dependencies={["min_followers"]}
+                        style={{ marginBottom: 0, width: '100%' }}
+                        extra="Leave blank if there is no upper limit."
+                        rules={[({ getFieldValue }) => ({
+                            validator(_, value) {
+                                const minimum = getFieldValue("min_followers");
+                                if (value === undefined || value === "" || minimum === undefined || minimum === "" || Number(value) >= Number(minimum)) return Promise.resolve();
+                                return Promise.reject(new Error("Maximum followers must be at least the minimum."));
+                            },
+                        })]}
+                    >
+                        <Input type="number" min={0} placeholder="e.g. 100000" />
+                    </Form.Item>
+                    <Form.Item
+                        label={<span className={labelClass}>Minimum engagement rate % (optional)</span>}
+                        name="min_engagement_rate"
+                        style={{ marginBottom: 0, width: '100%' }}
+                        extra="Compared with the latest recorded rate, when available."
+                        rules={[{ validator: (_, value) => value === undefined || value === null || value === '' || (Number(value) >= 0 && Number(value) <= 100) ? Promise.resolve() : Promise.reject(new Error('Enter a rate from 0 to 100.')) }]}
+                    >
+                        <Input type="number" min={0} max={100} step={0.1} placeholder="e.g. 2.5" />
+                    </Form.Item>
                 </div>
             </div>
 

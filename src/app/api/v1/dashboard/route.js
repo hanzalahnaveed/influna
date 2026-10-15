@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireRole } from "@/lib/auth";
 
 export async function GET() {
+    const auth = await requireRole("BRAND");
+    if (auth.response) return auth.response;
     try {
         const groupedCounts = await prisma.campaign.groupBy({
+            where: { ownerUserId: auth.user.id },
             by: ["status"],
             _count: { _all: true },
         });

@@ -56,6 +56,8 @@ const NewCampaign = () => {
             const payment_information = {
                 ...paymentTerms,
                 campaign_payment_model: finalValues.campaign_payment_model,
+                ...(finalValues.campaign_budget !== undefined && finalValues.campaign_budget !== null && finalValues.campaign_budget !== "" ? { campaign_budget: Number(finalValues.campaign_budget) } : {}),
+                budget_currency: String(finalValues.budget_currency || "USD").toUpperCase(),
             };
             if (finalValues.campaign_payment_model === 'Performance Based') {
                 payment_information.performance_model = paymentTerms.performance_model;
@@ -90,6 +92,9 @@ const NewCampaign = () => {
                     campaign_age_range: finalValues.campaign_age_range,
                     campaign_gender: finalValues.campaign_gender,
                     campaign_interest: finalValues.campaign_interest,
+                    ...(finalValues.min_followers !== undefined && finalValues.min_followers !== '' ? { min_followers: Number(finalValues.min_followers) } : {}),
+                    ...(finalValues.max_followers !== undefined && finalValues.max_followers !== '' ? { max_followers: Number(finalValues.max_followers) } : {}),
+                    ...(finalValues.min_engagement_rate !== undefined && finalValues.min_engagement_rate !== '' ? { min_engagement_rate: Number(finalValues.min_engagement_rate) } : {}),
                 },
                 platform_details: {
                     campaign_platform: finalValues.campaign_platform,
