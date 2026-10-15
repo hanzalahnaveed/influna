@@ -13,6 +13,7 @@ const defaultMenu = [
     { id: 1, sidebar_name: "Dashboard", route: "/dashboard", icon: MdOutlineSpaceDashboard },
     { id: 2, sidebar_name: "Campaign", route: "/dashboard/campaign", icon: MdOutlineCampaign },
     { id: 3, sidebar_name: "Creators", route: "/dashboard/creators", icon: FiUsers },
+    { id: 15, sidebar_name: "Saved Creators", route: "/dashboard/saved-creators", icon: FiUsers },
     { id: 4, sidebar_name: "Creator Workflow", route: "/dashboard/campaign-workflow", icon: FiGitPullRequest },
     { id: 5, sidebar_name: "Creator Invitations", route: "/dashboard/creator-invitations", icon: FiMail },
     { id: 6, sidebar_name: "My Creator Profile", route: "/dashboard/creator-profile", icon: FiUser },
