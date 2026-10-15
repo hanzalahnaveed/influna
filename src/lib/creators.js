@@ -55,8 +55,17 @@ export function serializeCreator(creator) {
                 account_data_source: account.dataSource,
                 connected_at: account.connectedAt?.toISOString() ?? null,
                 verified_at: account.verifiedAt?.toISOString() ?? null,
-                verification_status: account.verifiedAt ? "verified" : account.connectedAt ? "connected_unverified" : "unverified",
-                is_verified: Boolean(account.verifiedAt),
+                verification_status: account.verifiedAt || account.verificationStatus === "VERIFIED"
+                    ? "verified"
+                    : account.verificationStatus === "PENDING"
+                        ? "pending"
+                        : account.verificationStatus === "REJECTED"
+                            ? "rejected"
+                            : account.connectedAt ? "connected_unverified" : "unverified",
+                verification_requested_at: account.verificationRequestedAt?.toISOString() ?? null,
+                verification_reviewed_at: account.verificationReviewedAt?.toISOString() ?? null,
+                verification_review_note: account.verificationReviewNote ?? null,
+                is_verified: Boolean(account.verifiedAt) && account.verificationStatus === "VERIFIED",
                 latest_metrics: snapshot ? {
                     observed_at: snapshot.observedAt.toISOString(),
                     data_source: snapshot.dataSource,
