@@ -21,7 +21,28 @@ export async function GET(_request, context) {
                 creator: {
                     include: {
                         socialAccounts: {
-                            select: { id: true, platform: true, handle: true, profileUrl: true },
+                            select: {
+                                id: true,
+                                platform: true,
+                                handle: true,
+                                profileUrl: true,
+                                dataSource: true,
+                                connectedAt: true,
+                                verifiedAt: true,
+                                snapshots: {
+                                    select: {
+                                        dataSource: true,
+                                        observedAt: true,
+                                        followerCount: true,
+                                        averageViews: true,
+                                        averageLikes: true,
+                                        averageComments: true,
+                                        engagementRate: true,
+                                    },
+                                    orderBy: { observedAt: "desc" },
+                                    take: 1,
+                                },
+                            },
                             orderBy: { createdAt: "asc" },
                         },
                     },
