@@ -39,6 +39,7 @@ export async function GET(_request, context) {
                 review_note: link.reviewNote,
                 reviewed_at: link.reviewedAt?.toISOString() ?? null,
                 completed_at: link.completedAt?.toISOString() ?? null,
+                updated_at: link.updatedAt.toISOString(),
             })),
         });
     } catch (error) {
