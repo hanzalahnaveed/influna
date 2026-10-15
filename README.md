@@ -133,3 +133,20 @@ Creator discovery displays these details and the available data gaps before the 
 Influna currently supports creator-provided profile and metric entry, plus CSV imports for development and marketplace seeding. No external social-platform API is required for these workflows. Brands and admins can open **Creator Data Import** in the dashboard and upload a CSV (up to 2 MB and 1,000 rows). Required columns are `display_name`, `platform`, and `handle`; supported platform values are Instagram, TikTok, YouTube, Facebook, and Other. Optional columns include `profile_url`, `bio`, `categories`, `country`, `city`, `languages`, `follower_count`, `following_count`, `post_count`, `average_views`, `average_likes`, `average_comments`, `engagement_rate`, and `observed_at`. Use `|` or `;` to separate multiple categories/languages.
 
 Provide a dataset name or source URL in the source field. Imports create public creator profiles and timestamped `public_dataset` metric snapshots; existing platform handles are skipped rather than overwritten. Import results report imported rows, duplicates, and row-level errors. Public-dataset metrics are reference data, not live, creator-verified, or independently verified metrics. Only import datasets whose licenses and terms permit this use. The CSV template is synthetic example data and is not a real creator record.
+
+
+## Synthetic creator benchmark dataset
+
+For development, Influna can be seeded with fictional creator profiles from the [Bot Or Not (BON) Synthetic Influencers dataset](https://huggingface.co/datasets/mayacheruty/BON-Synthetic-Influencers). Its dataset card identifies an MIT license, 10,042 synthetic profiles, and no real people or personal data. The source is a benchmark, not a representative sample of the creator economy.
+
+Prepare a small import file (Node.js 20+; internet access required):
+
+```bash
+node scripts/prepare-bon-dataset.mjs
+# Optional: prepare up to 1,000 rows
+node scripts/prepare-bon-dataset.mjs --limit=1000
+```
+
+The script downloads the source CSV and writes `data/bon-synthetic-creator-import.csv`. Upload that file at `/dashboard/creator-data` as a BRAND or ADMIN. The importer stores the records with synthetic handles and platform `Other` so they cannot be mistaken for real Instagram accounts. Metrics are marked `synthetic_dataset`; source labels are retained as benchmark metadata.
+
+**Important:** the dataset's fraud labels and signals are simulated. Do not use them to accuse, rank, reject, or make payment decisions about real creators. They are suitable for demonstrating the data pipeline and later experimenting with fraud-risk methods, not for estimating real-world fraud prevalence. Never mix these synthetic profiles into a production marketplace without an explicit environment/data-type separation.
