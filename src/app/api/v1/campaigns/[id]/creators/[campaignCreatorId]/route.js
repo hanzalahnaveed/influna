@@ -106,10 +106,26 @@ export async function PATCH(request, context) {
         }
         if (body.action === "complete") data.completedAt = now;
 
-        const updated = await prisma.campaignCreator.update({
-            where: { id: link.id },
+        // Apply the transition only if the status is still one of the allowed source states.
+        // This prevents concurrent requests from overwriting a newer workflow decision.
+        const changed = await prisma.campaignCreator.updateMany({
+            where: { id: link.id, status: { in: transition.from } },
             data,
         });
+        if (changed.count !== 1) {
+            const current = await prisma.campaignCreator.findUnique({
+                where: { id: link.id },
+                select: { status: true },
+            });
+            return jsonError(
+                `Cannot perform "${body.action}" while status is "${current?.status ?? "unknown"}".`,
+                409,
+            );
+        }
+        const updated = await prisma.campaignCreator.findUnique({
+            where: { id: link.id },
+        });
+        if (!updated) return jsonError("Campaign creator record not found.", 404);
 
         return NextResponse.json({
             campaign_creator_id: updated.id,
