@@ -164,7 +164,7 @@ export default function CampaignWorkflowPage() {
                 {selectedCampaign && <p className="mt-3 text-xs text-[#6B7280]">Selected: <span className="font-medium text-[#495057]">{selectedCampaign.campaign_details?.campaign_title || "Untitled campaign"}</span></p>}
             </section>
 
-            <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
                 {[
                     ["Suggested", "Suggested"],
                     ["Applications", "Applied"],
