@@ -277,6 +277,9 @@ export function scoreCreatorForCampaign(campaign, creator) {
     ];
     const completenessRatio = completenessChecks.filter(Boolean).length / completenessChecks.length;
     let qualityMultiplier = 0.75 + (0.25 * completenessRatio);
+    if (completenessRatio < 1) {
+        reasons.push(`Profile completeness is ${Math.round(completenessRatio * 100)}%; missing profile fields lower confidence, not profile fit.`);
+    }
 
     const metricDependentKeys = new Set(["follower_range", "engagement_rate", "audience_age", "audience_gender", "audience_geography"]);
     const usesMetrics = factors.some((factor) => metricDependentKeys.has(factor.key));
@@ -298,9 +301,18 @@ export function scoreCreatorForCampaign(campaign, creator) {
                 : "stale";
 
     if (usesMetrics) {
-        if (metricsFreshness === "aging") qualityMultiplier *= 0.9;
-        if (metricsFreshness === "stale") qualityMultiplier *= 0.75;
-        if (metricsFreshness === "no_metrics") qualityMultiplier *= 0.8;
+        if (metricsFreshness === "aging") {
+            qualityMultiplier *= 0.9;
+            reasons.push("Metrics used for matching are 31–90 days old, so confidence is reduced.");
+        }
+        if (metricsFreshness === "stale") {
+            qualityMultiplier *= 0.75;
+            reasons.push("Metrics used for matching are more than 90 days old, so confidence is reduced.");
+        }
+        if (metricsFreshness === "no_metrics") {
+            qualityMultiplier *= 0.8;
+            reasons.push("No dated metric snapshot is available to support metric-dependent matching.");
+        }
 
         const metricAccounts = accounts.filter((account) => account.latestSnapshot);
         if (metricAccounts.length) {
@@ -308,8 +320,10 @@ export function scoreCreatorForCampaign(campaign, creator) {
                 Boolean(account.verifiedAt) || account.verificationStatus === "VERIFIED"
             ).length / metricAccounts.length;
             qualityMultiplier *= 0.85 + (0.15 * verifiedRatio);
+            if (verifiedRatio < 1) reasons.push("Some metric-bearing social accounts are unverified, which reduces confidence but does not change profile fit.");
         } else {
             qualityMultiplier *= 0.85;
+            reasons.push("Metric-dependent criteria have no metric-bearing accounts to support verification checks.");
         }
     }
 
@@ -347,7 +361,7 @@ export function scoreCreatorForCampaign(campaign, creator) {
         match_reasons: reasons,
         match_factors: factors,
         missing_data: [...new Set(missingData)],
-        score_type: "rule_based_v3",
+        score_type: "rule_based_v4",
         note: evaluatedWeight
             ? "Profile-fit score reflects criterion matches only and is not reduced for missing profile information. Confidence combines criterion coverage with data completeness, metric recency, account verification status when metrics are used, and source reliability. This is not a prediction of campaign performance."
             : "No applicable matching criteria could be assessed. Complete the campaign brief and creator data before relying on this recommendation.",
