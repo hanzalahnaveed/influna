@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireRole } from "@/lib/auth";
 
 function jsonError(message, status) {
     return NextResponse.json({ error: message }, { status });
 }
 
 export async function GET(_request, context) {
+    const auth = await requireRole("BRAND");
+    if (auth.response) return auth.response;
     const { id: campaignId } = await context.params;
     try {
-        const campaign = await prisma.campaign.findUnique({ where: { id: campaignId }, select: { id: true } });
+        const campaign = await prisma.campaign.findUnique({ where: { id: campaignId, ownerUserId: auth.user.id }, select: { id: true } });
         if (!campaign) return jsonError("Campaign not found.", 404);
 
         const links = await prisma.campaignCreator.findMany({
