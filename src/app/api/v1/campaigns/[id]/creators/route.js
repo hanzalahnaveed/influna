@@ -1,0 +1,62 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+
+function jsonError(message, status) {
+    return NextResponse.json({ error: message }, { status });
+}
+
+export async function GET(_request, context) {
+    const { id: campaignId } = await context.params;
+    try {
+        const campaign = await prisma.campaign.findUnique({ where: { id: campaignId }, select: { id: true } });
+        if (!campaign) return jsonError("Campaign not found.", 404);
+
+        const links = await prisma.campaignCreator.findMany({
+            where: { campaignId },
+            include: {
+                creator: {
+                    include: {
+                        socialAccounts: {
+                            select: { id: true, platform: true, handle: true, profileUrl: true },
+                            orderBy: { createdAt: "asc" },
+                        },
+                    },
+                },
+            },
+            orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+        });
+
+        return NextResponse.json({
+            campaign_id: campaignId,
+            count: links.length,
+            creators: links.map((link) => ({
+                campaign_creator_id: link.id,
+                creator_id: link.creatorId,
+                display_name: link.creator.displayName,
+                bio: link.creator.bio,
+                categories: link.creator.categories,
+                country: link.creator.country,
+                city: link.creator.city,
+                languages: link.creator.languages,
+                social_accounts: link.creator.socialAccounts,
+                status: link.status,
+                match_score: link.matchScore,
+                match_reasons: link.matchReasons,
+                invited_at: link.invitedAt?.toISOString() ?? null,
+                accepted_at: link.acceptedAt?.toISOString() ?? null,
+                declined_at: link.declinedAt?.toISOString() ?? null,
+                content_url: link.contentUrl,
+                content_note: link.contentNote,
+                content_submitted_at: link.contentSubmittedAt?.toISOString() ?? null,
+                review_note: link.reviewNote,
+                reviewed_at: link.reviewedAt?.toISOString() ?? null,
+                completed_at: link.completedAt?.toISOString() ?? null,
+                created_at: link.createdAt.toISOString(),
+                updated_at: link.updatedAt.toISOString(),
+            })),
+        });
+    } catch (error) {
+        console.error("Failed to list campaign creators:", error);
+        return jsonError("Unable to load campaign workflow.", 500);
+    }
+}
