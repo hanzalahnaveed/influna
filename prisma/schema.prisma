@@ -139,3 +139,35 @@ model CampaignCreator {
   @@index([campaignId, status])
   @@index([creatorId, status])
 }
+
+
+model CampaignDeliverable {
+  id                 String                 @id @default(cuid())
+  campaignCreatorId  String
+  title              String
+  description        String?
+  dueAt              DateTime?
+  status             String                 @default("Pending")
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  campaignCreator    CampaignCreator        @relation(fields: [campaignCreatorId], references: [id], onDelete: Cascade)
+  submissions        DeliverableSubmission[]
+  @@index([campaignCreatorId, status])
+  @@index([dueAt, status])
+}
+
+model DeliverableSubmission {
+  id             String              @id @default(cuid())
+  deliverableId  String
+  version        Int
+  contentUrl     String
+  creatorNote    String?
+  status         String              @default("Submitted")
+  submittedAt    DateTime            @default(now())
+  reviewNote     String?
+  reviewedAt     DateTime?
+  deliverable    CampaignDeliverable @relation(fields: [deliverableId], references: [id], onDelete: Cascade)
+  @@unique([deliverableId, version])
+  @@index([deliverableId, submittedAt])
+  @@index([status, submittedAt])
+}
