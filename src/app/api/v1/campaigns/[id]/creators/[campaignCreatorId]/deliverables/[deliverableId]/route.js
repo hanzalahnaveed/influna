@@ -109,7 +109,7 @@ export async function PATCH(request, context) {
             return jsonError("Only the latest pending submission can be reviewed.", 409);
         }
         const nextStatus = action === "approve" ? "Approved" : "ChangesRequested";
-        const updated = await prisma.$transaction(async (tx) => {
+        const result = await prisma.$transaction(async (tx) => {
             const submission = await tx.deliverableSubmission.update({
                 where: { id: latest.id },
                 data: {
@@ -122,11 +122,35 @@ export async function PATCH(request, context) {
                 where: { id: deliverable.id },
                 data: { status: nextStatus },
             });
-            return submission;
+
+            let collaborationStatus = deliverable.campaignCreator.status;
+            if (action === "approve") {
+                const remaining = await tx.campaignDeliverable.count({
+                    where: {
+                        campaignCreatorId,
+                        status: { not: "Approved" },
+                    },
+                });
+                if (remaining === 0) {
+                    const collaboration = await tx.campaignCreator.update({
+                        where: { id: campaignCreatorId },
+                        data: {
+                            status: "Approved",
+                            reviewNote: body.review_note?.trim() || null,
+                            reviewedAt: now,
+                        },
+                        select: { status: true },
+                    });
+                    collaborationStatus = collaboration.status;
+                }
+            }
+            return { submission, collaborationStatus };
         });
+        const updated = result.submission;
         return NextResponse.json({
             deliverable_id: deliverable.id,
             status: nextStatus,
+            collaboration_status: result.collaborationStatus,
             submission: {
                 id: updated.id,
                 version: updated.version,
