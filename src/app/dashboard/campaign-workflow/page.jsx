@@ -265,7 +265,7 @@ export default function CampaignWorkflowPage() {
                                 </>}
                                 {record.status === "Invited" && <span className="self-center text-xs text-[#6B7280]">Waiting for the creator to accept or decline from their account.</span>}
                                 {record.status === "Approved" && <button className={buttonPrimary} disabled={busy} onClick={() => runAction(record, "complete")} type="button"><FiCheck size={13} /> Mark completed</button>}
-                                {!["Completed", "Cancelled"].includes(record.status) && <button className={buttonSecondary} disabled={busy} onClick={() => runAction(record, "cancel")} type="button">Cancel collaboration</button>}
+                                {["Suggested", "Invited", "Accepted", "ContentSubmitted", "ChangesRequested", "Approved"].includes(record.status) && <button className={buttonSecondary} disabled={busy} onClick={() => runAction(record, "cancel")} type="button">Cancel collaboration</button>}
                                 {busy && <span className="self-center text-xs text-[#6B7280]">Updating status...</span>}
                             </div>
                         </article>
