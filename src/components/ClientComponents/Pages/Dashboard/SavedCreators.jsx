@@ -5,6 +5,9 @@ import { FiBookmark, FiMapPin, FiGlobe, FiRefreshCw } from "react-icons/fi";
 
 export default function SavedCreators() {
     const [creators, setCreators] = useState([]);
+    const [campaigns, setCampaigns] = useState([]);
+    const [campaignId, setCampaignId] = useState("");
+    const [addingId, setAddingId] = useState("");
     const [loading, setLoading] = useState(true);
     const [removingId, setRemovingId] = useState("");
     const [error, setError] = useState("");
@@ -26,6 +29,50 @@ export default function SavedCreators() {
     }, []);
 
     useEffect(() => { loadCreators(); }, [loadCreators]);
+
+    useEffect(() => {
+        let cancelled = false;
+        async function loadCampaigns() {
+            try {
+                const response = await fetch("/api/v1/campaigns", { cache: "no-store" });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data?.error || "Could not load campaigns.");
+                if (!cancelled) {
+                    const available = (Array.isArray(data) ? data : []).filter((campaign) => ["Active", "Draft"].includes(campaign.status));
+                    setCampaigns(available);
+                    if (available.length) setCampaignId((current) => current || available[0].id);
+                }
+            } catch (err) {
+                if (!cancelled) setError(err.message || "Could not load campaigns.");
+            }
+        }
+        loadCampaigns();
+        return () => { cancelled = true; };
+    }, []);
+
+    async function addToCampaign(creator) {
+        if (!campaignId) {
+            setError("Create or select an active campaign first.");
+            return;
+        }
+        setAddingId(creator.id);
+        setError("");
+        setNotice("");
+        try {
+            const response = await fetch("/api/v1/campaigns/" + encodeURIComponent(campaignId) + "/creators/shortlist", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ creator_ids: [creator.id] }),
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data?.error || "Could not add creator to campaign.");
+            setNotice(data.message || (creator.display_name + " added to campaign workflow."));
+        } catch (err) {
+            setError(err.message || "Could not add creator to campaign.");
+        } finally {
+            setAddingId("");
+        }
+    }
 
     async function removeCreator(creator) {
         setRemovingId(creator.id);
@@ -56,6 +103,16 @@ export default function SavedCreators() {
             </header>
             {error && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
             {notice && <div role="status" className="rounded-lg border border-[#FAD7AE] bg-[#FFF7ED] px-4 py-3 text-sm text-[#8A4B08]">{notice}</div>}
+            <section className="rounded-xl border border-[#E3E7ED] bg-white p-4 shadow-sm">
+                <label className="block text-xs font-semibold text-[#495057]">Add shortlisted creators to campaign
+                    <select className="mt-1 w-full rounded-lg border border-[#D9DEE7] bg-white px-3 py-2.5 text-sm font-normal outline-none focus:border-[#FA8500] sm:max-w-xl" value={campaignId} onChange={(event) => setCampaignId(event.target.value)}>
+                        <option value="">Select an active or draft campaign...</option>
+                        {campaigns.map((campaign) => <option key={campaign.id} value={campaign.id}>{campaign.campaign_details?.campaign_title || "Untitled campaign"} · {campaign.status}</option>)}
+                    </select>
+                </label>
+                {!campaigns.length && <p className="mt-2 text-xs text-[#6B7280]">You need an active or draft campaign before adding creators. <a className="font-semibold text-[#B85E00] underline" href="/dashboard/campaign/create">Create a campaign</a>.</p>}
+                <p className="mt-2 text-xs text-[#6B7280]">Adding a creator places them in the campaign workflow as a suggestion; it does not send an invitation.</p>
+            </section>
             {loading ? (
                 <div className="rounded-xl border border-[#E3E7ED] bg-white p-10 text-center text-sm text-[#6B7280]">Loading saved creators...</div>
             ) : creators.length === 0 ? (
@@ -85,9 +142,12 @@ export default function SavedCreators() {
                                     <div key={account.id} className="mb-2 flex items-center gap-2 text-xs text-[#495057]"><FiGlobe size={13} className="text-[#9CA3AF]" /><span>{account.platform} · @{account.handle}</span>{account.is_verified && <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">Verified</span>}</div>
                                 )) : <p className="text-xs text-[#9CA3AF]">No social accounts listed</p>}
                             </div>
-                            <div className="mt-auto flex items-center justify-between gap-3 border-t border-[#EEF0F3] pt-3">
+                            <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-[#EEF0F3] pt-3">
                                 <span className="text-xs text-[#9CA3AF]">Saved {creator.saved_at ? new Date(creator.saved_at).toLocaleDateString() : ""}</span>
-                                <button type="button" disabled={removingId === creator.id} onClick={() => removeCreator(creator)} className="rounded-lg border border-[#D9DEE7] px-3 py-2 text-xs font-semibold text-[#495057] hover:bg-[#F8F9FA] disabled:opacity-60">{removingId === creator.id ? "Removing..." : "Remove"}</button>
+                                <div className="flex flex-wrap gap-2">
+                                    <button type="button" disabled={!campaignId || addingId === creator.id} onClick={() => addToCampaign(creator)} className="rounded-lg bg-[#FA8500] px-3 py-2 text-xs font-semibold text-white hover:bg-[#e87900] disabled:opacity-50">{addingId === creator.id ? "Adding..." : "Add to campaign"}</button>
+                                    <button type="button" disabled={removingId === creator.id} onClick={() => removeCreator(creator)} className="rounded-lg border border-[#D9DEE7] px-3 py-2 text-xs font-semibold text-[#495057] hover:bg-[#F8F9FA] disabled:opacity-60">{removingId === creator.id ? "Removing..." : "Remove"}</button>
+                                </div>
                             </div>
                         </article>
                     ))}
