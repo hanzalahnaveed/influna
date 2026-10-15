@@ -150,3 +150,17 @@ node scripts/prepare-bon-dataset.mjs --limit=1000
 The script downloads the source CSV and writes `data/bon-synthetic-creator-import.csv`. Upload that file at `/dashboard/creator-data` as a BRAND or ADMIN. The importer stores the records with synthetic handles and platform `Other` so they cannot be mistaken for real Instagram accounts. Metrics are marked `synthetic_dataset`; source labels are retained as benchmark metadata.
 
 **Important:** the dataset's fraud labels and signals are simulated. Do not use them to accuse, rank, reject, or make payment decisions about real creators. They are suitable for demonstrating the data pipeline and later experimenting with fraud-risk methods, not for estimating real-world fraud prevalence. Never mix these synthetic profiles into a production marketplace without an explicit environment/data-type separation.
+
+
+## Creator rate cards and campaign budget fit
+
+Creators can manage indicative platform/deliverable prices at `/dashboard/rate-card`. The creator rate-card API lets the owner create/update a rate for each unique platform + deliverable type, mark it public/private, and remove it. Public rates are visible to brands; private rates are not returned in match results. These rates are indicative and do not replace campaign-specific offers or agreed fees.
+
+Brands can set an optional total campaign budget and currency in the campaign payment step. Creator matching shows the lowest public rate in the same currency and labels each creator as within budget, over budget, no public rate, currency mismatch, or budget not set. Influna does not convert currencies or assume that one creator rate represents the total cost of a multi-creator campaign. Existing campaign budgets are optional.
+
+After pulling this branch, run the new Prisma migration and regenerate the client:
+
+```bash
+npx prisma migrate dev
+npx prisma generate
+```
