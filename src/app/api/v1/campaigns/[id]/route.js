@@ -5,15 +5,18 @@ import {
     serializeCampaign,
 } from "@/lib/campaigns";
 import { prisma } from "@/lib/prisma";
+import { requireRole } from "@/lib/auth";
 
 function jsonError(message, status, details) {
     return NextResponse.json({ error: message, ...(details && { details }) }, { status });
 }
 
 export async function GET(_request, context) {
+    const auth = await requireRole("BRAND");
+    if (auth.response) return auth.response;
     const { id } = await context.params;
     try {
-        const campaign = await prisma.campaign.findUnique({ where: { id } });
+        const campaign = await prisma.campaign.findUnique({ where: { id, ownerUserId: auth.user.id } });
         if (!campaign) return jsonError("Campaign not found.", 404);
         return NextResponse.json(serializeCampaign(campaign));
     } catch (error) {
@@ -23,6 +26,8 @@ export async function GET(_request, context) {
 }
 
 export async function PUT(request, context) {
+    const auth = await requireRole("BRAND");
+    if (auth.response) return auth.response;
     const { id } = await context.params;
     let body;
     try {
@@ -37,7 +42,7 @@ export async function PUT(request, context) {
     }
 
     try {
-        const existing = await prisma.campaign.findUnique({ where: { id } });
+        const existing = await prisma.campaign.findFirst({ where: { id, ownerUserId: auth.user.id } });
         if (!existing) return jsonError("Campaign not found.", 404);
 
         const input = parsed.data;
@@ -86,9 +91,11 @@ export async function PUT(request, context) {
 }
 
 export async function DELETE(_request, context) {
+    const auth = await requireRole("BRAND");
+    if (auth.response) return auth.response;
     const { id } = await context.params;
     try {
-        const result = await prisma.campaign.deleteMany({ where: { id } });
+        const result = await prisma.campaign.deleteMany({ where: { id, ownerUserId: auth.user.id } });
         if (result.count === 0) return jsonError("Campaign not found.", 404);
         return new Response(null, { status: 204 });
     } catch (error) {
