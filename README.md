@@ -44,7 +44,8 @@ For production, configure `DATABASE_URL`, run `npm run db:generate` during the b
 | `POST` | `/api/v1/campaigns/:id/matches` | Calculate and save transparent rule-based creator matches |
 | `GET` | `/api/v1/campaigns/:id/creators` | List creator records and workflow status for a campaign |
 | `PATCH` | `/api/v1/campaigns/:id/creators/:campaignCreatorId` | Apply a validated creator collaboration workflow transition |
-| `GET` | `/api/v1/creators/:id/invitations` | List invitations for the signed-in creator profile only |\n| `POST` | `/api/v1/creators/:id/social-accounts` | Add a self-reported social account to the signed-in creator profile |\n| `DELETE` | `/api/v1/creators/:id/social-accounts/:socialAccountId` | Remove a social account owned by the signed-in creator |
+| `GET` | `/api/v1/creators/:id/invitations` | List invitations for the signed-in creator profile only |
+| `POST` | `/api/v1/creators/:id/social-accounts` | Add a self-reported social account to the signed-in creator profile |\n| `DELETE` | `/api/v1/creators/:id/social-accounts/:socialAccountId` | Remove a social account owned by the signed-in creator |
 
 Brand-only campaign endpoints and creator-only profile/invitation endpoints require an active session. Campaign reads and writes are scoped to the signed-in brand owner; creator profile updates, metric snapshots, invitations, and content submissions are scoped to the signed-in creator. New creator profiles start private. Existing records without an owner remain in the database but are not visible through owner-scoped campaign endpoints. Passwords are hashed with Node.js scrypt; sessions use random opaque tokens stored as SHA-256 digests and an HTTP-only, SameSite=Strict cookie.
 
