@@ -18,7 +18,7 @@ Requirements: Node.js 20+ and PostgreSQL 14+.
 
 5. Start the app with `npm run dev`.
 
-The frontend and API run together at `http://localhost:3000`; there is no separate service on port 8000.
+The frontend and API run together at `http://localhost:3000`; there is no separate service on port 8000. Open `/auth` to register or sign in as a brand/agency or creator.
 
 For production, configure `DATABASE_URL`, run `npm run db:generate` during the build, and run `npm run db:deploy` before serving traffic.
 
@@ -26,7 +26,11 @@ For production, configure `DATABASE_URL`, run `npm run db:generate` during the b
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/api/v1/campaigns` | List campaigns, newest first |
+| `POST` | `/api/v1/auth/register` | Register a BRAND or CREATOR account; creator registration creates a private profile |
+| `POST` | `/api/v1/auth/login` | Sign in and set an HTTP-only session cookie |
+| `POST` | `/api/v1/auth/logout` | End the current session |
+| `GET` | `/api/v1/auth/me` | Return the current account and creator profile ID, if applicable |
+| `GET` | `/api/v1/campaigns` | List the signed-in brand account's campaigns, newest first |
 | `POST` | `/api/v1/campaigns` | Create a campaign using the UI's campaign sections |
 | `GET` | `/api/v1/campaigns/:id` | Get one campaign |
 | `PUT` | `/api/v1/campaigns/:id` | Partially update campaign sections |
@@ -42,6 +46,8 @@ For production, configure `DATABASE_URL`, run `npm run db:generate` during the b
 | `PATCH` | `/api/v1/campaigns/:id/creators/:campaignCreatorId` | Apply a validated creator collaboration workflow transition |
 | `GET` | `/api/v1/creators/:id/invitations` | Preview invitations and collaborations for a creator profile |
 
+Brand-only campaign endpoints and creator-only profile/invitation endpoints require an active session. Campaign reads and writes are scoped to the signed-in brand owner; creator profile updates, metric snapshots, invitations, and content submissions are scoped to the signed-in creator. New creator profiles start private. Existing records without an owner remain in the database but are not visible through owner-scoped campaign endpoints. Passwords are hashed with Node.js scrypt; sessions use random opaque tokens stored as SHA-256 digests and an HTTP-only, SameSite=Strict cookie.
+
 Campaign JSON uses `campaign_details`, `targeting_criteria`, `platform_details`, and `payment_information`. Payment information is stored as terms only; no charges or payment-provider operations are performed. Complete campaigns are validated on create/update; drafts may be incomplete.
 
 ## Creator data and matching
@@ -54,4 +60,4 @@ The matching endpoint currently uses a deterministic, explainable rule-based sco
 
 The dashboard includes a manual campaign collaboration tracker with Suggested → Invited → Accepted/Declined → ContentSubmitted → ChangesRequested/Approved → Completed states, plus cancellation. A creator invitation inbox prototype can preview campaign invitations and record accept/decline responses. It uses a profile selector rather than authenticated creator accounts and must not be treated as a secure creator portal. The tracker does not send invitations or notifications. Content links and review notes are stored with timestamps.
 
-Authentication, per-user authorization, creator consent/ownership verification, Meta OAuth/API integration, automated invitations/notifications, payment execution, and production monitoring are not implemented yet. The API is not safe to expose publicly until authentication and authorization are added. Do not use real creator data in a public demo without permission.
+Email verification, password reset, rate limiting/abuse controls, CSRF tokens for cross-site deployments, creator consent/verification flows, Meta OAuth/API integration, automated invitations/notifications, payment execution, and production monitoring are not implemented yet. Authentication and ownership checks now cover the primary campaign, creator, invitation, matching, metric-snapshot, and dashboard APIs, but this is still an early-stage foundation and requires a security review before production exposure. Do not use real creator data in a public demo without permission.
