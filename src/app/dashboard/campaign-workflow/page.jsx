@@ -227,7 +227,7 @@ export default function CampaignWorkflowPage() {
                                 {record.review_note && <p className="sm:col-span-2"><span className="font-semibold text-[#495057]">Review note:</span> {record.review_note}</p>}
                             </div>
 
-                            {["Accepted", "ChangesRequested"].includes(record.status) && (
+                            {["Accepted", "ChangesRequested"].includes(record.status) && (record.deliverable_count || 0) === 0 && (
                                 <div className="mt-4 grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
                                     <label className="text-xs font-medium text-[#495057]">Content URL
                                         <input className={inputClass + " mt-1"} type="url" placeholder="https://..." value={draft.content_url || ""} onChange={(event) => setDraft("content_url", event.target.value)} />
@@ -239,7 +239,13 @@ export default function CampaignWorkflowPage() {
                                 </div>
                             )}
 
-                            {record.status === "ContentSubmitted" && (
+                            {(record.deliverable_count || 0) > 0 && !["Completed", "Cancelled", "Declined"].includes(record.status) && (
+                                <p className="mt-4 rounded-lg border border-sky-100 bg-sky-50/60 px-3 py-2 text-xs leading-5 text-sky-900">
+                                    This collaboration has {record.deliverable_count} deliverable{record.deliverable_count === 1 ? "" : "s"}. Manage submissions, revisions, and approval in the Deliverables &amp; revisions page.
+                                </p>
+                            )}
+
+                            {record.status === "ContentSubmitted" && (record.deliverable_count || 0) === 0 && (
                                 <div className="mt-4 flex flex-col gap-2">
                                     <label className="text-xs font-medium text-[#495057]">Review note (required for changes, optional for approval)
                                         <textarea className={inputClass + " mt-1 min-h-16"} placeholder="Feedback for the creator..." value={draft.review_note || ""} onChange={(event) => setDraft("review_note", event.target.value)} />
@@ -257,10 +263,7 @@ export default function CampaignWorkflowPage() {
                                     <button className={buttonPrimary} disabled={busy} onClick={() => runAction(record, "accept_application")} type="button"><FiCheck size={13} /> Accept application</button>
                                     <button className={buttonSecondary} disabled={busy} onClick={() => runAction(record, "decline_application")} type="button"><FiXCircle size={13} /> Decline application</button>
                                 </>}
-                                {record.status === "Invited" && <>
-                                    <button className={buttonPrimary} disabled={busy} onClick={() => runAction(record, "accept")} type="button"><FiCheck size={13} /> Record acceptance</button>
-                                    <button className={buttonSecondary} disabled={busy} onClick={() => runAction(record, "decline")} type="button"><FiXCircle size={13} /> Record decline</button>
-                                </>}
+                                {record.status === "Invited" && <span className="self-center text-xs text-[#6B7280]">Waiting for the creator to accept or decline from their account.</span>}
                                 {record.status === "Approved" && <button className={buttonPrimary} disabled={busy} onClick={() => runAction(record, "complete")} type="button"><FiCheck size={13} /> Mark completed</button>}
                                 {!["Completed", "Cancelled"].includes(record.status) && <button className={buttonSecondary} disabled={busy} onClick={() => runAction(record, "cancel")} type="button">Cancel collaboration</button>}
                                 {busy && <span className="self-center text-xs text-[#6B7280]">Updating status...</span>}
