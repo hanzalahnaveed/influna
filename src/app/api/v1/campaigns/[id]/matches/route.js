@@ -31,7 +31,7 @@ export async function POST(request, context) {
         const ranked = creators.map((creator) => ({
             creator,
             ...scoreCreatorForCampaign(campaign, creator),
-        })).sort((a, b) => b.match_score - a.match_score).slice(0, limit);
+        })).sort((a, b) => b.match_score - a.match_score || b.match_confidence - a.match_confidence).slice(0, limit);
 
         const matches = await Promise.all(ranked.map(async (item) => {
             const saved = await prisma.campaignCreator.upsert({
@@ -77,7 +77,12 @@ export async function POST(request, context) {
                 })),
                 status: saved.status,
                 match_score: item.match_score,
+                match_confidence: item.match_confidence,
+                recommendation_tier: item.recommendation_tier,
+                recommendation_label: item.recommendation_label,
                 match_reasons: item.match_reasons,
+                match_factors: item.match_factors,
+                missing_data: item.missing_data,
                 score_type: item.score_type,
                 note: item.note,
             };
@@ -85,10 +90,10 @@ export async function POST(request, context) {
 
         return NextResponse.json({
             campaign_id: campaignId,
-            matching_method: "rule_based_v2",
+            matching_method: "rule_based_v3",
             count: matches.length,
             matches,
-            disclaimer: "Scores are explainable profile-fit estimates, not predictions. Missing metrics are not treated as mismatches; creator-provided metrics are not independently verified.",
+            disclaimer: "Scores are explainable profile-fit estimates, not predictions of campaign performance. Confidence indicates how much of the applicable criteria could be assessed. Missing metrics are not treated as mismatches; creator-provided metrics are not independently verified."
         });
     } catch (error) {
         console.error("Failed to match creators:", error);
