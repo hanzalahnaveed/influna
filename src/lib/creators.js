@@ -51,7 +51,7 @@ export function getCreatorSource(creator) {
         return { key: "public_dataset_reference", label: "Public-dataset reference", description: "Imported reference data from a dataset; not independently verified or live platform metrics." };
     }
 
-    return { key: "creator_submitted", label: "Creator-submitted profile", description: "Profile information was submitted by the creator; social metrics may still be unverified." };
+    return { key: "unknown_source", label: "Source not recorded", description: "The profile's origin is not recorded. Review provenance before relying on its information." };
 }
 
 export function serializeCreator(creator, { includePrivateVerificationFeedback = false } = {}) {
