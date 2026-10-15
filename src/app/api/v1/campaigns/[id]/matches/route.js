@@ -53,7 +53,18 @@ export async function POST(request, context) {
                 country: item.creator.country,
                 city: item.creator.city,
                 languages: item.creator.languages,
-                social_accounts: item.creator.socialAccounts.map((account) => ({\n                    id: account.id,\n                    platform: account.platform,\n                    handle: account.handle,\n                    profile_url: account.profileUrl,\n                    latest_metrics: account.snapshots?.[0] ? {\n                        observed_at: account.snapshots[0].observedAt.toISOString(),\n                        data_source: account.snapshots[0].dataSource,\n                        follower_count: account.snapshots[0].followerCount,\n                        engagement_rate: account.snapshots[0].engagementRate,\n                    } : null,\n                })),
+                social_accounts: item.creator.socialAccounts.map((account) => ({
+                    id: account.id,
+                    platform: account.platform,
+                    handle: account.handle,
+                    profile_url: account.profileUrl,
+                    latest_metrics: account.snapshots?.[0] ? {
+                        observed_at: account.snapshots[0].observedAt.toISOString(),
+                        data_source: account.snapshots[0].dataSource,
+                        follower_count: account.snapshots[0].followerCount,
+                        engagement_rate: account.snapshots[0].engagementRate,
+                    } : null,
+                })),
                 status: saved.status,
                 match_score: item.match_score,
                 match_reasons: item.match_reasons,
@@ -67,7 +78,7 @@ export async function POST(request, context) {
             matching_method: "rule_based_v2",
             count: matches.length,
             matches,
-            disclaimer: "Scores indicate preliminary profile fit only; they do not predict reach, conversions, authenticity, or campaign success.",
+            disclaimer: "Scores are explainable profile-fit estimates, not predictions. Missing metrics are not treated as mismatches; creator-provided metrics are not independently verified.",
         });
     } catch (error) {
         console.error("Failed to match creators:", error);
