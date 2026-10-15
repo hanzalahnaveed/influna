@@ -20,7 +20,10 @@ export async function POST(request, context) {
 
         const creators = await prisma.creatorProfile.findMany({
             where: { isPublic: true },
-            include: { socialAccounts: { include: { snapshots: { orderBy: { observedAt: "desc" }, take: 1 } } } },
+            include: { socialAccounts: { include: {
+                snapshots: { orderBy: { observedAt: "desc" }, take: 1 },
+                audienceInsights: { orderBy: { observedAt: "desc" }, take: 1 },
+            } } },
             orderBy: { createdAt: "desc" },
             take: 500,
         });
@@ -63,6 +66,13 @@ export async function POST(request, context) {
                         data_source: account.snapshots[0].dataSource,
                         follower_count: account.snapshots[0].followerCount,
                         engagement_rate: account.snapshots[0].engagementRate,
+                    } : null,
+                    latest_audience_insight: account.audienceInsights?.[0] ? {
+                        observed_at: account.audienceInsights[0].observedAt.toISOString(),
+                        data_source: account.audienceInsights[0].dataSource,
+                        age_breakdown: account.audienceInsights[0].ageBreakdown,
+                        gender_breakdown: account.audienceInsights[0].genderBreakdown,
+                        country_breakdown: account.audienceInsights[0].countryBreakdown,
                     } : null,
                 })),
                 status: saved.status,
