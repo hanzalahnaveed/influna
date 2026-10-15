@@ -23,6 +23,7 @@ export default function CreatorDiscoveryPage() {
     const [country, setCountry] = useState("");
     const [platformFilter, setPlatformFilter] = useState("");
     const [categoryFilter, setCategoryFilter] = useState("");
+    const [sourceFilter, setSourceFilter] = useState("");
     const [selectedCampaign, setSelectedCampaign] = useState("");
     const [loading, setLoading] = useState(true);
     const [matching, setMatching] = useState(false);
@@ -96,8 +97,9 @@ export default function CreatorDiscoveryPage() {
     const visibleCreators = useMemo(() => creators.filter((creator) => {
         const matchesPlatform = !platformFilter || (creator.social_accounts || []).some((account) => account.platform === platformFilter);
         const matchesCategory = !categoryFilter || (creator.categories || []).some((category) => category.toLowerCase() === categoryFilter.toLowerCase());
-        return matchesPlatform && matchesCategory;
-    }), [creators, platformFilter, categoryFilter]);
+        const matchesSource = !sourceFilter || creator.profile_source === sourceFilter;
+        return matchesPlatform && matchesCategory && matchesSource;
+    }), [creators, platformFilter, categoryFilter, sourceFilter]);
     const selectedCampaignTitle = campaigns.find((item) => item.id === selectedCampaign)?.campaign_details?.campaign_title;
 
     async function toggleSavedCreator(creator) {
@@ -192,9 +194,17 @@ export default function CreatorDiscoveryPage() {
                     <input className={inputClass} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name, bio, or category" />
                     <input className={inputClass} value={country} onChange={(e) => setCountry(e.target.value)} placeholder="Country, e.g. Pakistan" />
                     <button className={primaryButton} type="submit"><FiSearch size={15} /> Search</button>
-                    <button className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#D9DEE7] px-3 py-2.5 text-sm font-medium text-[#495057] hover:bg-[#F8F9FA]" type="button" onClick={() => { setSearch(""); setCountry(""); setPlatformFilter(""); setCategoryFilter(""); }}><FiRefreshCw size={14} /> Reset</button>
+                    <button className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#D9DEE7] px-3 py-2.5 text-sm font-medium text-[#495057] hover:bg-[#F8F9FA]" type="button" onClick={() => { setSearch(""); setCountry(""); setPlatformFilter(""); setCategoryFilter(""); setSourceFilter(""); }}><FiRefreshCw size={14} /> Reset</button>
                 </form>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <label className="text-xs font-medium text-[#495057]">Data source
+                        <select className={inputClass + " mt-1"} value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)}>
+                            <option value="">All profile sources</option>
+                            <option value="creator_submitted">Creator-submitted</option>
+                            <option value="public_dataset_reference">Public dataset reference</option>
+                            <option value="synthetic_dataset">Synthetic benchmark</option>
+                        </select>
+                    </label>
                     <label className="text-xs font-medium text-[#495057]">Platform
                         <select className={inputClass + " mt-1"} value={platformFilter} onChange={(e) => setPlatformFilter(e.target.value)}>
                             <option value="">All platforms</option>
@@ -232,10 +242,11 @@ export default function CreatorDiscoveryPage() {
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                     <div>
                                         <h3 className="font-semibold">{match.display_name}</h3>
+                                        <span title={match.profile_source_description || ""} className={"mt-1 inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold " + (match.profile_source === "synthetic_dataset" ? "bg-violet-50 text-violet-800" : match.profile_source === "public_dataset_reference" ? "bg-sky-50 text-sky-800" : "bg-slate-100 text-slate-700")}>{match.profile_source_label || "Profile source unknown"}</span>
                                         <p className="mt-1 text-xs text-[#6B7280]">{[match.city, match.country].filter(Boolean).join(", ") || "Location not provided"} · {(match.categories || []).join(", ") || "No categories listed"}</p>
                                         <div className="mt-2 flex flex-wrap gap-2">{(match.social_accounts || []).map((account) => <span key={account.id} className="rounded-full bg-[#F3F4F6] px-2.5 py-1 text-xs text-[#495057]">{account.platform} · @{account.handle}</span>)}</div>
                                         {(match.social_accounts || []).some((account) => account.latest_metrics) && <div className="mt-2 space-y-1 text-xs text-[#6B7280]">
-                                            {(match.social_accounts || []).filter((account) => account.latest_metrics).map((account) => <p key={account.id}>{account.platform}: {formatCount(account.latest_metrics.follower_count) || "Follower count unavailable"} followers{account.latest_metrics.engagement_rate !== null && account.latest_metrics.engagement_rate !== undefined ? ` · ${Number(account.latest_metrics.engagement_rate).toFixed(2)}% engagement` : ""} · {account.latest_metrics.data_source === "creator_provided" ? "creator-provided metrics" : "recorded metrics"}</p>)}
+                                            {(match.social_accounts || []).filter((account) => account.latest_metrics).map((account) => <p key={account.id}>{account.platform}: {formatCount(account.latest_metrics.follower_count) || "Follower count unavailable"} followers{account.latest_metrics.engagement_rate !== null && account.latest_metrics.engagement_rate !== undefined ? ` · ${Number(account.latest_metrics.engagement_rate).toFixed(2)}% engagement` : ""} · {account.latest_metrics.data_source === "creator_provided" ? "creator-provided, unverified metrics" : account.latest_metrics.data_source === "synthetic_dataset" ? "synthetic benchmark metrics" : account.latest_metrics.data_source === "public_dataset" ? "public-dataset reference metrics" : "recorded metrics; source needs review"}</p>)}
                                         </div>}
                                     </div>
                                     <div className="flex shrink-0 flex-col items-stretch gap-2 sm:items-end">
@@ -287,6 +298,7 @@ export default function CreatorDiscoveryPage() {
                                         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#FFF0DF] text-sm font-bold text-[#B85E00]">{(creator.display_name || "C").trim().slice(0, 1).toUpperCase()}</div>
                                         <div className="min-w-0 flex-1">
                                             <h3 className="truncate font-semibold">{creator.display_name}</h3>
+                                            <span title={creator.profile_source_description || ""} className={"mt-1 inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold " + (creator.profile_source === "synthetic_dataset" ? "bg-violet-50 text-violet-800" : creator.profile_source === "public_dataset_reference" ? "bg-sky-50 text-sky-800" : "bg-slate-100 text-slate-700")}>{creator.profile_source_label || "Profile source unknown"}</span>
                                             <p className="mt-0.5 flex items-center gap-1 text-xs text-[#6B7280]"><FiMapPin size={12} /> {[creator.city, creator.country].filter(Boolean).join(", ") || "Location not provided"}</p>
                                         </div>
                                         {matched && <span className="rounded-full bg-[#ECFDF3] px-2 py-1 text-[10px] font-semibold text-[#067647]">Matched</span>}
@@ -307,7 +319,7 @@ export default function CreatorDiscoveryPage() {
                                                     <span className={`mt-1 block rounded-full px-2 py-0.5 text-[10px] font-semibold ${account.is_verified ? "bg-emerald-50 text-emerald-700" : account.verification_status === "pending" ? "bg-sky-50 text-sky-700" : account.verification_status === "rejected" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-800"}`}>
                                                         {account.is_verified ? "Verified account" : account.verification_status === "pending" ? "Verification pending" : account.verification_status === "rejected" ? "Verification rejected" : "Unverified account"}
                                                     </span>
-                                                    {account.latest_metrics && <span className="block text-[10px] text-[#9CA3AF]">{(account.latest_metrics.data_source || "unknown").replaceAll("_", " ")} metrics · {account.latest_metrics.observed_at ? new Date(account.latest_metrics.observed_at).toLocaleDateString() : "date unknown"}</span>}
+                                                    {account.latest_metrics && <span className="block text-[10px] text-[#9CA3AF]">{account.latest_metrics.data_source === "synthetic_dataset" ? "synthetic benchmark" : account.latest_metrics.data_source === "public_dataset" ? "public-dataset reference" : account.latest_metrics.data_source === "creator_provided" ? "creator-provided, unverified" : "source unknown"} metrics · {account.latest_metrics.observed_at ? new Date(account.latest_metrics.observed_at).toLocaleDateString() : "date unknown"}</span>}
                                                 </span>
                                             </div>;
                                         }) : <p className="text-xs text-[#9CA3AF]">No social accounts listed</p>}
@@ -322,7 +334,7 @@ export default function CreatorDiscoveryPage() {
                     </div>
                 )}
             </section>
-            <p className="text-xs leading-5 text-[#9CA3AF]">Data quality note: social metrics display their recorded source and observation time where available. A source label is metadata, not proof of platform verification. Profile-fit scores do not predict reach, conversions, authenticity, or campaign success.</p>
+            <p className="text-xs leading-5 text-[#9CA3AF]">Data quality note: creator-submitted profiles, public-dataset references, and synthetic benchmark profiles are labeled separately. Synthetic profiles are fictional and only for development/evaluation; dataset labels are not allegations about real creators. A source label is metadata, not proof of platform verification. Profile-fit scores do not predict reach, conversions, authenticity, or campaign success.</p>
         </main>
     );
 }
