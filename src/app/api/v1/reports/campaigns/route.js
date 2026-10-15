@@ -47,6 +47,9 @@ export async function GET() {
                 updated_at: campaign.updatedAt.toISOString(),
                 creators: {
                     total: links.length,
+                    average_match_score: links.filter((link) => Number.isFinite(link.matchScore)).length
+                        ? Math.round(links.reduce((sum, link) => sum + (Number.isFinite(link.matchScore) ? link.matchScore : 0), 0) / links.filter((link) => Number.isFinite(link.matchScore)).length)
+                        : null,
                     suggested: countStatus("Suggested"),
                     invited: countStatus("Invited"),
                     applied: countStatus("Applied"),
@@ -69,7 +72,15 @@ export async function GET() {
                     completion_rate: deliverables.length ? Math.round((approvedDeliverables / deliverables.length) * 100) : null,
                     approved_by_deadline: onTimeApproved,
                     with_deadline: dueDeliverables.length,
+                    on_time_approval_rate: deliverables.filter((item) => item.status === "Approved" && item.dueAt).length
+                        ? Math.round((onTimeApproved / deliverables.filter((item) => item.status === "Approved" && item.dueAt).length) * 100)
+                        : null,
                 },
+                acceptance_rate: (() => {
+                    const acceptedPath = links.filter((link) => ["Accepted", "ContentSubmitted", "ChangesRequested", "Approved", "Completed"].includes(link.status)).length;
+                    const decided = acceptedPath + countStatus("Declined");
+                    return decided ? Math.round((acceptedPath / decided) * 100) : null;
+                })(),
             };
         });
 
@@ -81,10 +92,16 @@ export async function GET() {
             deliverables: sum.deliverables + report.deliverables.total,
             approved_deliverables: sum.approved_deliverables + report.deliverables.approved,
             overdue_deliverables: sum.overdue_deliverables + report.deliverables.overdue,
+            on_time_approved_deliverables: sum.on_time_approved_deliverables + report.deliverables.approved_by_deadline,
+            deliverables_with_deadline: sum.deliverables_with_deadline + report.deliverables.with_deadline,
         }), {
             campaigns: 0, creators: 0, active_collaborations: 0, completed_collaborations: 0,
             deliverables: 0, approved_deliverables: 0, overdue_deliverables: 0,
+            on_time_approved_deliverables: 0, deliverables_with_deadline: 0,
         });
+        totals.on_time_approval_rate = totals.deliverables_with_deadline
+            ? Math.round((totals.on_time_approved_deliverables / totals.deliverables_with_deadline) * 100)
+            : null;
 
         return NextResponse.json({ generated_at: now.toISOString(), totals, campaigns: reports });
     } catch (error) {
