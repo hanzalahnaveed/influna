@@ -28,19 +28,23 @@ export default function CreatorInvitationsPage() {
 
     useEffect(() => {
         let cancelled = false;
-        async function loadCreators() {
+        async function loadCurrentCreator() {
             try {
-                const response = await fetch("/api/v1/creators", { cache: "no-store" });
+                const response = await fetch("/api/v1/auth/me", { cache: "no-store" });
                 const data = await response.json();
-                if (!response.ok) throw new Error(data?.error || "Could not load creator profiles.");
-                if (cancelled) return;
-                setCreators(Array.isArray(data) ? data : []);
-                if (Array.isArray(data) && data.length) setCreatorId(data[0].id);
+                if (!response.ok || !data?.user) throw new Error("Please sign in with a creator account to view invitations.");
+                if (data.user.role !== "CREATOR" || !data.user.creator_profile_id) {
+                    throw new Error("This page is available to creator accounts only.");
+                }
+                if (!cancelled) setCreatorId(data.user.creator_profile_id);
             } catch (err) {
-                if (!cancelled) setError(err.message || "Could not load creator profiles.");
+                if (!cancelled) {
+                    setError(err.message || "Could not load the signed-in creator account.");
+                    setLoading(false);
+                }
             }
         }
-        loadCreators();
+        loadCurrentCreator();
         return () => { cancelled = true; };
     }, []);
 
@@ -93,24 +97,17 @@ export default function CreatorInvitationsPage() {
     return (
         <main className="flex flex-col gap-6 pb-8 text-[#212529]">
             <header>
-                <p className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#FA8500]">Creator portal · prototype</p>
+                <p className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#FA8500]">Creator portal</p>
                 <h1 className="text-2xl font-bold tracking-tight sm:text-[28px]">Campaign invitations</h1>
-                <p className="mt-1 max-w-2xl text-sm text-[#6B7280]">Review campaign details and record whether a creator accepts or declines an invitation.</p>
+                <p className="mt-1 max-w-2xl text-sm text-[#6B7280]">Review campaign details and respond to invitations sent to your creator account.</p>
             </header>
 
-            <div role="note" className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-5 text-amber-900">
-                Prototype only: select a profile to preview its inbox. This is not yet a private creator account. Authentication and ownership checks must be implemented before real creators use this page.
-            </div>
             {error && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
             {notice && <div role="status" className="rounded-lg border border-[#FAD7AE] bg-[#FFF7ED] px-4 py-3 text-sm text-[#8A4B08]">{notice}</div>}
 
             <section className="rounded-xl border border-[#E3E7ED] bg-white p-4 shadow-sm sm:p-5">
-                <label className="block text-xs font-semibold text-[#495057]">Preview creator profile
-                    <select className={inputClass + " mt-1"} value={creatorId} onChange={(event) => setCreatorId(event.target.value)}>
-                        <option value="">Select a creator...</option>
-                        {creators.map((creator) => <option key={creator.id} value={creator.id}>{creator.display_name}</option>)}
-                    </select>
-                </label>
+                <p className="text-xs font-semibold text-[#495057]">Signed-in creator account</p>
+                <p className="mt-1 text-sm text-[#6B7280]">Your invitations are loaded for your own creator profile. You cannot switch to another creator's inbox.</p>
                 <button type="button" className={secondaryButton + " mt-3"} onClick={() => loadInvitations()} disabled={!creatorId || loading}><FiRefreshCw size={14} /> Refresh inbox</button>
             </section>
 
@@ -120,7 +117,7 @@ export default function CreatorInvitationsPage() {
                     <span className="text-xs text-[#6B7280]">{invitations.length} records</span>
                 </div>
                 {loading ? <div className="rounded-xl border border-[#E3E7ED] bg-white p-10 text-center text-sm text-[#6B7280]">Loading invitations...</div>
-                    : !creatorId ? <div className="rounded-xl border border-dashed border-[#CBD2DC] bg-white p-10 text-center text-sm text-[#6B7280]">Select a creator profile to preview its invitation inbox.</div>
+                    : !creatorId ? <div className="rounded-xl border border-dashed border-[#CBD2DC] bg-white p-10 text-center text-sm text-[#6B7280]">Sign in with a creator account to view your invitation inbox.</div>
                     : invitations.length === 0 ? <div className="rounded-xl border border-dashed border-[#CBD2DC] bg-white p-10 text-center text-sm text-[#6B7280]">No invitations yet. Campaign teams can record an invitation from Creator Workflow.</div>
                     : invitations.map((invitation) => (
                         <article key={invitation.campaign_creator_id} className="rounded-xl border border-[#E3E7ED] bg-white p-4 shadow-sm sm:p-5">
