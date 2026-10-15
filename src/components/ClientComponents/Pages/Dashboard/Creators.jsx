@@ -14,6 +14,9 @@ function formatCount(value) {
 
 export default function CreatorDiscoveryPage() {
     const [creators, setCreators] = useState([]);
+    const [savedIds, setSavedIds] = useState(new Set());
+    const [currentRole, setCurrentRole] = useState("");
+    const [savingId, setSavingId] = useState("");
     const [campaigns, setCampaigns] = useState([]);
     const [matches, setMatches] = useState([]);
     const [search, setSearch] = useState("");
@@ -65,6 +68,26 @@ export default function CreatorDiscoveryPage() {
         return () => { cancelled = true; };
     }, []);
 
+    useEffect(() => {
+        let cancelled = false;
+        async function loadSavedCreators() {
+            try {
+                const meResponse = await fetch("/api/v1/auth/me", { cache: "no-store" });
+                const me = await meResponse.json();
+                if (cancelled || !meResponse.ok) return;
+                setCurrentRole(me?.user?.role || "");
+                if (me?.user?.role !== "BRAND") return;
+                const response = await fetch("/api/v1/saved-creators", { cache: "no-store" });
+                const data = await response.json();
+                if (response.ok && !cancelled) setSavedIds(new Set((data.creators || []).map((creator) => creator.id)));
+            } catch {
+                // Creator discovery remains available if saved shortlist data is temporarily unavailable.
+            }
+        }
+        loadSavedCreators();
+        return () => { cancelled = true; };
+    }, []);
+
     const filterOptions = useMemo(() => ({
         platforms: [...new Set(creators.flatMap((creator) => (creator.social_accounts || []).map((account) => account.platform)).filter(Boolean))].sort(),
         categories: [...new Set(creators.flatMap((creator) => creator.categories || []).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
@@ -76,6 +99,32 @@ export default function CreatorDiscoveryPage() {
         return matchesPlatform && matchesCategory;
     }), [creators, platformFilter, categoryFilter]);
     const selectedCampaignTitle = campaigns.find((item) => item.id === selectedCampaign)?.campaign_details?.campaign_title;
+
+    async function toggleSavedCreator(creator) {
+        setSavingId(creator.id);
+        setError("");
+        setNotice("");
+        const wasSaved = savedIds.has(creator.id);
+        try {
+            const response = await fetch(wasSaved ? `/api/v1/saved-creators/${encodeURIComponent(creator.id)}` : "/api/v1/saved-creators", {
+                method: wasSaved ? "DELETE" : "POST",
+                headers: wasSaved ? undefined : { "Content-Type": "application/json" },
+                body: wasSaved ? undefined : JSON.stringify({ creator_id: creator.id }),
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data?.error || "Could not update saved creators.");
+            setSavedIds((current) => {
+                const next = new Set(current);
+                if (wasSaved) next.delete(creator.id); else next.add(creator.id);
+                return next;
+            });
+            setNotice(wasSaved ? `${creator.display_name} removed from your shortlist.` : `${creator.display_name} saved to your shortlist.`);
+        } catch (err) {
+            setError(err.message || "Could not update saved creators.");
+        } finally {
+            setSavingId("");
+        }
+    }
 
     async function findMatches() {
         if (!selectedCampaign) {
@@ -237,6 +286,7 @@ export default function CreatorDiscoveryPage() {
                                         </div>
                                         {matched && <span className="rounded-full bg-[#ECFDF3] px-2 py-1 text-[10px] font-semibold text-[#067647]">Matched</span>}
                                     </div>
+                                    {currentRole === "BRAND" && <button type="button" disabled={savingId === creator.id} onClick={() => toggleSavedCreator(creator)} className="mt-3 self-start rounded-lg border border-[#FAD7AE] px-3 py-1.5 text-xs font-semibold text-[#9A4D00] transition hover:bg-[#FFF7ED] disabled:opacity-60">{savingId === creator.id ? "Saving..." : savedIds.has(creator.id) ? "Remove from shortlist" : "Save creator"}</button>}
                                     <p className="mt-3 line-clamp-3 min-h-[54px] text-sm leading-5 text-[#6B7280]">{creator.bio || "No bio has been added for this creator yet."}</p>
                                     <div className="mt-3 flex flex-wrap gap-1.5">
                                         {(creator.categories || []).length ? creator.categories.map((category) => <span key={category} className="rounded-full bg-[#F3F4F6] px-2.5 py-1 text-xs text-[#495057]">{category}</span>) : <span className="text-xs text-[#9CA3AF]">No categories listed</span>}
