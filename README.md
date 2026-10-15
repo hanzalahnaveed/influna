@@ -171,3 +171,10 @@ npx prisma generate
 Brands can open `/dashboard/campaign-plan` to create a saved proposed creator lineup from creators already linked to a campaign. Each planned line selects a creator's public rate card and quantity, stores a price snapshot, and supports notes. The planner totals spend by currency, compares only spend in the campaign budget currency, and flags overspend or a low remaining balance. It does not convert currencies, invite creators, lock rates, or create payment records. A creator must first be linked to the campaign from Creator Discovery or Creator Workflow.
 
 The campaign planning API is `GET/PUT /api/v1/campaigns/:id/plan`; saving replaces the proposed plan atomically after ownership and public-rate validation.
+
+
+## Campaign plan to collaboration workflow
+
+The Campaign Plan & Budget page now connects saved planning to the existing collaboration workflow. For a creator in the saved plan, a brand can save the plan and record an invitation directly when the creator is still in the `Suggested` state. This uses the existing campaign workflow transition and in-app notification behavior; it does not send an email or social-platform message.
+
+After the creator accepts, the brand can transfer that creator’s planned lines into the Deliverables workflow without re-entering titles or notes. Quantities are included in deliverable titles, planning notes are retained, and descriptions explicitly label rate-card amounts as estimates—not negotiated or agreed fees. A plan-item marker prevents repeated transfer requests from creating the same requirements again. Creating deliverable requirements does not create payment records or publish content. Commercial offers and final agreed fees continue to be managed separately in Campaign Workflow / Commercials.
