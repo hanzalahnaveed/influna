@@ -47,8 +47,11 @@ For production, configure `DATABASE_URL`, run `npm run db:generate` during the b
 | `GET` | `/api/v1/campaigns/:id/creators/:campaignCreatorId/deliverables` | List requirements and versioned submissions for a collaboration |
 | `POST` | `/api/v1/campaigns/:id/creators/:campaignCreatorId/deliverables` | Add a deliverable requirement (brand only) |
 | `PATCH` | `/api/v1/campaigns/:id/creators/:campaignCreatorId/deliverables/:deliverableId` | Submit a version, request revisions, or approve a submission with ownership checks |
-| `GET` | `/api/v1/creator/campaigns` | List active campaigns for a signed-in creator, including their application status |\n| `POST` | `/api/v1/creator/campaigns` | Apply to an active campaign from the signed-in creator profile |\n| `GET` | `/api/v1/creators/:id/invitations` | List invitations for the signed-in creator profile only |
-| `POST` | `/api/v1/creators/:id/social-accounts` | Add a self-reported social account to the signed-in creator profile |\n| `DELETE` | `/api/v1/creators/:id/social-accounts/:socialAccountId` | Remove a social account owned by the signed-in creator |
+| `GET` | `/api/v1/creator/campaigns` | List active campaigns for a signed-in creator, including their application status |
+| `POST` | `/api/v1/creator/campaigns` | Apply to an active campaign from the signed-in creator profile |
+| `GET` | `/api/v1/creators/:id/invitations` | List invitations for the signed-in creator profile only |
+| `POST` | `/api/v1/creators/:id/social-accounts` | Add a self-reported social account to the signed-in creator profile |
+| `DELETE` | `/api/v1/creators/:id/social-accounts/:socialAccountId` | Remove a social account owned by the signed-in creator |
 
 Brand-only campaign endpoints and creator-only profile/invitation endpoints require an active session. Campaign reads and writes are scoped to the signed-in brand owner; creator profile updates, metric snapshots, invitations, and content submissions are scoped to the signed-in creator. New creator profiles start private. Existing records without an owner remain in the database but are not visible through owner-scoped campaign endpoints. Passwords are hashed with Node.js scrypt; sessions use random opaque tokens stored as SHA-256 digests and an HTTP-only, SameSite=Strict cookie.
 
