@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { scoreCreatorForCampaign } from "@/lib/matching";
-import { getCreatorSource } from "@/lib/creators";
+import { assessCreatorDataQuality, getCreatorSource } from "@/lib/creators";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
 
@@ -56,6 +56,7 @@ export async function POST(request, context) {
                 profile_source: profileSource.key,
                 profile_source_label: profileSource.label,
                 profile_source_description: profileSource.description,
+                data_quality: assessCreatorDataQuality(item.creator),
                 display_name: item.creator.displayName,
                 categories: item.creator.categories,
                 country: item.creator.country,
