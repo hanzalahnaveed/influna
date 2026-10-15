@@ -135,6 +135,7 @@ model CampaignCreator {
   updatedAt    DateTime       @updatedAt
   campaign     Campaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   creator      CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  deliverables CampaignDeliverable[]
   @@unique([campaignId, creatorId])
   @@index([campaignId, status])
   @@index([creatorId, status])
