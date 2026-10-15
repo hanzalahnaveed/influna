@@ -39,7 +39,7 @@ export default function CampaignPlanPage() {
             const response = await fetch(`/api/v1/campaigns/${encodeURIComponent(campaignId)}/plan`, { cache: "no-store" });
             const data = await response.json();
             if (!response.ok) throw new Error(data?.error || "Could not load plan.");
-            setCreators(data.creators || []); setItems((data.items || []).map(item => ({ creator_id: item.creator_id, rate_card_id: item.rate_card_id || "", quantity: String(item.quantity), notes: item.notes || "" }))); setBudget(data.budget || null);
+            setCreators(data.creators || []); setItems((data.items || []).map(item => ({ creator_id: item.creator_id, rate_card_id: item.rate_card_id || "", quantity: String(item.quantity), notes: item.notes || "", unit_price: item.unit_price, currency: item.currency, platform: item.platform, deliverable_type: item.deliverable_type, creator_name: item.creator_name, current_rate: item.current_rate, current_rate_currency: item.current_rate_currency }))); setBudget(data.budget || null);
         } catch (err) { setError(err.message || "Could not load plan."); }
         finally { setLoading(false); }
     }, [campaignId]);
@@ -50,9 +50,10 @@ export default function CampaignPlanPage() {
     const totals = useMemo(() => items.reduce((result, item) => {
         const creator = creators.find(entry => entry.creator_id === item.creator_id);
         const rate = creator?.rate_cards.find(entry => entry.id === item.rate_card_id);
-        if (!rate) return result;
-        const currency = rate.currency;
-        result[currency] = (result[currency] || 0) + rate.price * Math.max(1, Number(item.quantity) || 1);
+        const currency = item.currency || rate?.currency;
+        const unitPrice = item.unit_price ?? rate?.price;
+        if (!currency || unitPrice === undefined || unitPrice === null) return result;
+        result[currency] = (result[currency] || 0) + Number(unitPrice) * Math.max(1, Number(item.quantity) || 1);
         return result;
     }, {}), [items, creators]);
 
@@ -68,7 +69,7 @@ export default function CampaignPlanPage() {
         const rate = creator.rate_cards.find(entry => entry.id === draft.rate_card_id);
         if (!rate) { setError("Choose a public rate card."); return; }
         if (items.some(item => item.creator_id === draft.creator_id && item.rate_card_id === draft.rate_card_id)) { setError("That deliverable is already in the plan. Update its quantity instead."); return; }
-        setItems(current => [...current, { ...draft, quantity: String(Math.min(100, Math.max(1, Number(draft.quantity) || 1))) }]);
+        setItems(current => [...current, { ...draft, quantity: String(Math.min(100, Math.max(1, Number(draft.quantity) || 1))), unit_price: rate.price, currency: rate.currency, platform: rate.platform, deliverable_type: rate.deliverable_type, creator_name: creator.display_name, current_rate: rate.price, current_rate_currency: rate.currency }]);
         setDraft(emptyDraft); setError(""); setNotice("");
     }
     function removeItem(index) { setItems(current => current.filter((_, i) => i !== index)); }
@@ -82,7 +83,7 @@ export default function CampaignPlanPage() {
             });
             const data = await response.json();
             if (!response.ok) throw new Error(data?.error || "Could not save plan.");
-            setItems((data.items || []).map(item => ({ creator_id: item.creator_id, rate_card_id: item.rate_card_id || "", quantity: String(item.quantity), notes: item.notes || "" })));
+            setItems((data.items || []).map(item => ({ creator_id: item.creator_id, rate_card_id: item.rate_card_id || "", quantity: String(item.quantity), notes: item.notes || "", unit_price: item.unit_price, currency: item.currency, platform: item.platform, deliverable_type: item.deliverable_type, creator_name: item.creator_name, current_rate: item.current_rate, current_rate_currency: item.current_rate_currency })));
             setNotice("Campaign plan saved.");
         } catch (err) { setError(err.message || "Could not save plan."); }
         finally { setSaving(false); }
@@ -119,9 +120,11 @@ export default function CampaignPlanPage() {
             {items.length === 0 ? <div className="rounded-xl border border-dashed border-[#CBD2DC] bg-white p-8 text-center text-sm text-[#6B7280]">Your proposed lineup is empty. Add a deliverable above.</div> : items.map((item, index) => {
                 const creator = creators.find(entry => entry.creator_id === item.creator_id);
                 const rate = creator?.rate_cards.find(entry => entry.id === item.rate_card_id);
-                const currency = rate?.currency || "USD";
-                const subtotal = (rate?.price || 0) * Math.max(1, Number(item.quantity) || 1);
-                return <article key={item.creator_id + ":" + item.rate_card_id} className="rounded-xl border border-[#E3E7ED] bg-white p-4"><div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_120px_auto] sm:items-center"><div><p className="font-semibold">{creator?.display_name || "Creator"}</p><p className="mt-1 text-sm text-[#6B7280]">{rate ? `${rate.platform} · ${rate.deliverable_type}` : "Rate unavailable"} · {money(rate?.price || 0, currency)} per item</p></div><label className="text-xs font-medium text-[#495057]">Quantity<input className={inputClass + " mt-1"} type="number" min="1" max="100" value={item.quantity} onChange={event => updateItem(index, "quantity", event.target.value)} /></label><div className="flex items-center justify-between gap-3"><p className="font-bold">{money(subtotal, currency)}</p><button type="button" className={secondary + " text-red-700"} onClick={() => removeItem(index)} aria-label="Remove planned deliverable"><FiTrash2 size={14} /> Remove</button></div></div><label className="mt-3 block text-xs font-medium text-[#495057]">Planning note (optional)<input className={inputClass + " mt-1"} maxLength="1000" value={item.notes} onChange={event => updateItem(index, "notes", event.target.value)} placeholder="e.g. prioritize product launch week" /></label></article>;
+                const currency = item.currency || rate?.currency || "USD";
+                const unitPrice = item.unit_price ?? rate?.price ?? 0;
+                const subtotal = Number(unitPrice) * Math.max(1, Number(item.quantity) || 1);
+                const rateChanged = rate && (Number(rate.price) !== Number(unitPrice) || rate.currency !== currency);
+                return <article key={item.creator_id + ":" + item.rate_card_id} className="rounded-xl border border-[#E3E7ED] bg-white p-4"><div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_120px_auto] sm:items-center"><div><p className="font-semibold">{creator?.display_name || "Creator"}</p><p className="mt-1 text-sm text-[#6B7280]">{item.platform || rate?.platform || "Platform"} · {item.deliverable_type || rate?.deliverable_type || "Deliverable"} · {money(unitPrice, currency)} per item</p>{rateChanged && <p className="mt-1 text-xs text-amber-700">Current rate changed to {money(rate.price, rate.currency)}; this plan keeps its saved estimate.</p>}</div><label className="text-xs font-medium text-[#495057]">Quantity<input className={inputClass + " mt-1"} type="number" min="1" max="100" value={item.quantity} onChange={event => updateItem(index, "quantity", event.target.value)} /></label><div className="flex items-center justify-between gap-3"><p className="font-bold">{money(subtotal, currency)}</p><button type="button" className={secondary + " text-red-700"} onClick={() => removeItem(index)} aria-label="Remove planned deliverable"><FiTrash2 size={14} /> Remove</button></div></div><label className="mt-3 block text-xs font-medium text-[#495057]">Planning note (optional)<input className={inputClass + " mt-1"} maxLength="1000" value={item.notes} onChange={event => updateItem(index, "notes", event.target.value)} placeholder="e.g. prioritize product launch week" /></label></article>;
             })}
         </section>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><p className="text-xs text-[#6B7280]">Estimates snapshot the selected public rate when saved. If a creator changes their rate later, refresh the plan to review differences.</p><button type="button" className={primary} onClick={savePlan} disabled={!campaignId || saving || loading}><FiSave size={15} /> {saving ? "Saving plan..." : "Save campaign plan"}</button></div>
