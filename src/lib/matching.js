@@ -13,7 +13,20 @@ function accountMetrics(creator) {
     return (creator.socialAccounts ?? []).map((account) => ({
         ...account,
         latestSnapshot: account.snapshots?.[0] ?? null,
+        latestAudienceInsight: account.audienceInsights?.[0] ?? null,
     }));
+}
+
+function normalizedKey(value) {
+    return String(value ?? "").toLowerCase().replace(/[\\s\\-–—_]/g, "");
+}
+
+function breakdownContains(breakdown, expected) {
+    if (!breakdown || typeof breakdown !== "object" || Array.isArray(breakdown)) return false;
+    const expectedKey = normalizedKey(expected);
+    return Object.entries(breakdown).some(([key, value]) =>
+        normalizedKey(key) === expectedKey && Number(value) > 0
+    );
 }
 
 export function scoreCreatorForCampaign(campaign, creator) {
@@ -61,6 +74,22 @@ export function scoreCreatorForCampaign(campaign, creator) {
             "Recorded follower count fits the requested range.", "Recorded follower count falls outside the requested range.");
     } else if (target.min_followers || target.max_followers) {
         reasons.push("Follower-range fit could not be assessed because creator metrics are unavailable.");
+    }
+
+    const wantedAge = String(target.campaign_age_range ?? "").trim();
+    if (wantedAge) {
+        const ageInsights = accounts.map((account) => account.latestAudienceInsight?.ageBreakdown).filter(Boolean);
+        if (ageInsights.length) addFactor(10, ageInsights.some((breakdown) => breakdownContains(breakdown, wantedAge)),
+            "Recorded audience age breakdown includes the target age range.", "Recorded audience age breakdown does not show the target age range.");
+        else reasons.push("Audience age fit could not be assessed because audience insights are unavailable.");
+    }
+
+    const wantedGender = String(target.campaign_gender ?? "").trim();
+    if (wantedGender && wantedGender.toLowerCase() !== "all") {
+        const genderInsights = accounts.map((account) => account.latestAudienceInsight?.genderBreakdown).filter(Boolean);
+        if (genderInsights.length) addFactor(10, genderInsights.some((breakdown) => breakdownContains(breakdown, wantedGender)),
+            "Recorded audience gender breakdown includes the target.", "Recorded audience gender breakdown does not show the target.");
+        else reasons.push("Audience gender fit could not be assessed because audience insights are unavailable.");
     }
 
     const engagementValues = accounts.map((account) => account.latestSnapshot?.engagementRate).filter((value) => Number.isFinite(value));
