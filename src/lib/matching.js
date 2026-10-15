@@ -67,10 +67,11 @@ export function scoreCreatorForCampaign(campaign, creator) {
     const minFollowers = Number(target.min_followers);
     const maxFollowers = Number(target.max_followers);
     if (followerValues.length && (target.min_followers !== undefined && target.min_followers !== "" || target.max_followers !== undefined && target.max_followers !== "")) {
-        const largestAccount = Math.max(...followerValues);
-        const meetsMin = !Number.isFinite(minFollowers) || minFollowers <= 0 || largestAccount >= minFollowers;
-        const meetsMax = !Number.isFinite(maxFollowers) || maxFollowers <= 0 || largestAccount <= maxFollowers;
-        addFactor(10, meetsMin && meetsMax,
+        const hasAccountInRange = followerValues.some((count) =>
+            (!Number.isFinite(minFollowers) || minFollowers <= 0 || count >= minFollowers) &&
+            (!Number.isFinite(maxFollowers) || maxFollowers <= 0 || count <= maxFollowers)
+        );
+        addFactor(10, hasAccountInRange,
             "Recorded follower count fits the requested range.", "Recorded follower count falls outside the requested range.");
     } else if (target.min_followers || target.max_followers) {
         reasons.push("Follower-range fit could not be assessed because creator metrics are unavailable.");
