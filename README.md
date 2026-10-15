@@ -43,6 +43,7 @@ For production, configure `DATABASE_URL`, run `npm run db:generate` during the b
 | `POST` | `/api/v1/payments` | Create a planned payment record against an agreed fee (brand only) |
 | `PATCH` | `/api/v1/payments/:id` | Update a payment record status (brand only) |
 | `GET` | `/api/v1/creators` | List public creator profiles; optional `search` and `country` filters |
+| `POST` | `/api/v1/creator-datasets/import` | Import up to 1,000 creator records from a CSV file (BRAND/ADMIN only); skips existing platform handles and labels metric snapshots as public-dataset reference data |
 | `GET` | `/api/v1/saved-creators` | List public creator profiles saved by the signed-in brand |
 | `POST` | `/api/v1/saved-creators` | Save a public creator to the signed-in brand’s shortlist |
 | `DELETE` | `/api/v1/saved-creators/:creatorId` | Remove a creator from the signed-in brand’s shortlist |
@@ -125,3 +126,10 @@ The response includes:
 - `missing_data`: gaps that a brand should review before relying on the recommendation.
 
 Creator discovery displays these details and the available data gaps before the brand records an invitation. The matcher does not currently score budget fit because creator rate cards are not yet captured; the campaign budget is not treated as evidence of creator affordability. Social metrics and audience insights must be reviewed for source and verification status. These recommendations are explainable heuristics, not a trained ML model or a guarantee of results.
+
+
+## Creator data sources and CSV import
+
+Influna currently supports creator-provided profile and metric entry, plus CSV imports for development and marketplace seeding. No external social-platform API is required for these workflows. Brands and admins can open **Creator Data Import** in the dashboard and upload a CSV (up to 2 MB and 1,000 rows). Required columns are `display_name`, `platform`, and `handle`; supported platform values are Instagram, TikTok, YouTube, Facebook, and Other. Optional columns include `profile_url`, `bio`, `categories`, `country`, `city`, `languages`, `follower_count`, `following_count`, `post_count`, `average_views`, `average_likes`, `average_comments`, `engagement_rate`, and `observed_at`. Use `|` or `;` to separate multiple categories/languages.
+
+Provide a dataset name or source URL in the source field. Imports create public creator profiles and timestamped `public_dataset` metric snapshots; existing platform handles are skipped rather than overwritten. Import results report imported rows, duplicates, and row-level errors. Public-dataset metrics are reference data, not live, creator-verified, or independently verified metrics. Only import datasets whose licenses and terms permit this use. The CSV template is synthetic example data and is not a real creator record.
