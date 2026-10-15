@@ -13,7 +13,10 @@ export async function GET(_request, context) {
 
         const links = await prisma.campaignCreator.findMany({
             where: { creatorId: id, status: { in: ["Applied", "Withdrawn", "Invited", "Accepted", "Declined", "ContentSubmitted", "ChangesRequested", "Approved", "Completed", "Cancelled"] } },
-            include: { campaign: { select: { id: true, campaignDetails: true, targetingCriteria: true, platformDetails: true, status: true } } },
+            include: {
+                _count: { select: { deliverables: true } },
+                campaign: { select: { id: true, campaignDetails: true, targetingCriteria: true, platformDetails: true, status: true } },
+            },
             orderBy: [{ invitedAt: "desc" }, { updatedAt: "desc" }],
         });
 
@@ -28,6 +31,7 @@ export async function GET(_request, context) {
                 targeting_criteria: link.campaign.targetingCriteria,
                 platform_details: link.campaign.platformDetails,
                 status: link.status,
+                deliverable_count: link._count.deliverables,
                 match_score: link.matchScore,
                 match_reasons: link.matchReasons,
                 invited_at: link.invitedAt?.toISOString() ?? null,
