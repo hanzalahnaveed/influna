@@ -143,7 +143,7 @@ export default function CampaignWorkflowPage() {
             </header>
 
             <div role="note" className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-5 text-amber-900">
-                This is a manual workflow tracker. Recording an invitation does not send an email or social-platform message, and status changes do not authenticate a creator’s response. Authentication and role-based permissions must be added before production use.
+                This is a manual workflow tracker. Brand and creator actions are restricted to their authenticated accounts, but recording an invitation does not send an email or social-platform message. Use test data until the remaining security and account-verification work is complete.
             </div>
 
             {error && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
