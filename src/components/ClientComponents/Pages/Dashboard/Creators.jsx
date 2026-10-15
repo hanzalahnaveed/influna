@@ -246,8 +246,8 @@ export default function CreatorDiscoveryPage() {
                                                 <span className="flex min-w-0 items-center gap-2 text-[#495057]"><FiGlobe size={13} className="shrink-0 text-[#9CA3AF]" /><span className="truncate">{account.platform} · @{account.handle}</span></span>
                                                 <span className="shrink-0 text-right text-[#6B7280]">
                                                     {followers ? `${followers} followers` : "No metrics"}
-                                                    <span className={`mt-1 block rounded-full px-2 py-0.5 text-[10px] font-semibold ${account.is_verified ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}>
-                                                        {account.is_verified ? "Verified account" : "Unverified account"}
+                                                    <span className={`mt-1 block rounded-full px-2 py-0.5 text-[10px] font-semibold ${account.is_verified ? "bg-emerald-50 text-emerald-700" : account.verification_status === "pending" ? "bg-sky-50 text-sky-700" : account.verification_status === "rejected" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-800"}`}>
+                                                        {account.is_verified ? "Verified account" : account.verification_status === "pending" ? "Verification pending" : account.verification_status === "rejected" ? "Verification rejected" : "Unverified account"}
                                                     </span>
                                                     {account.latest_metrics && <span className="block text-[10px] text-[#9CA3AF]">{(account.latest_metrics.data_source || "unknown").replaceAll("_", " ")} metrics · {account.latest_metrics.observed_at ? new Date(account.latest_metrics.observed_at).toLocaleDateString() : "date unknown"}</span>}
                                                 </span>
