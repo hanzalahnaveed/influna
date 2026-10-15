@@ -6,7 +6,7 @@ import { FiCheck, FiClock, FiExternalLink, FiRefreshCw, FiSend, FiUsers, FiXCirc
 const buttonPrimary = "inline-flex items-center justify-center gap-2 rounded-lg bg-[#FA8500] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#e87900] disabled:cursor-not-allowed disabled:opacity-50";
 const buttonSecondary = "inline-flex items-center justify-center gap-2 rounded-lg border border-[#D9DEE7] bg-white px-3 py-2 text-xs font-semibold text-[#495057] transition hover:bg-[#F8F9FA] disabled:cursor-not-allowed disabled:opacity-50";
 const inputClass = "w-full rounded-lg border border-[#D9DEE7] bg-white px-3 py-2 text-sm outline-none focus:border-[#FA8500]";
-const statuses = ["Suggested", "Invited", "Accepted", "Declined", "ContentSubmitted", "ChangesRequested", "Approved", "Completed", "Cancelled"];
+const statuses = ["Suggested", "Applied", "Invited", "Accepted", "Declined", "ContentSubmitted", "ChangesRequested", "Approved", "Completed", "Cancelled"];
 
 function humanize(value) {
     return value?.replace(/([a-z])([A-Z])/g, "$1 $2") || "Unknown";
@@ -15,7 +15,7 @@ function humanize(value) {
 function statusStyle(status) {
     if (["Approved", "Completed", "Accepted"].includes(status)) return "bg-emerald-50 text-emerald-700";
     if (["Declined", "Cancelled"].includes(status)) return "bg-red-50 text-red-700";
-    if (["Invited", "ContentSubmitted", "ChangesRequested"].includes(status)) return "bg-amber-50 text-amber-800";
+    if (["Applied", "Invited", "ContentSubmitted", "ChangesRequested"].includes(status)) return "bg-amber-50 text-amber-800";
     return "bg-slate-100 text-slate-700";
 }
 
@@ -137,7 +137,7 @@ export default function CampaignWorkflowPage() {
                 <div>
                     <p className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#FA8500]">Campaign operations</p>
                     <h1 className="text-2xl font-bold tracking-tight sm:text-[28px]">Creator workflow</h1>
-                    <p className="mt-1 max-w-2xl text-sm text-[#6B7280]">Track each creator from suggestion through invitation, content review, and completion.</p>
+                    <p className="mt-1 max-w-2xl text-sm text-[#6B7280]">Review creator applications and track each collaboration from invitation through content approval and completion.</p>
                 </div>
                 <button className={buttonSecondary} type="button" onClick={() => { loadCampaigns(); loadRecords(); }}><FiRefreshCw size={14} /> Refresh</button>
             </header>
@@ -167,6 +167,7 @@ export default function CampaignWorkflowPage() {
             <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
                 {[
                     ["Suggested", "Suggested"],
+                    ["Applications", "Applied"],
                     ["Invited", "Invited"],
                     ["Accepted", "Accepted"],
                     ["In review", "ContentSubmitted"],
@@ -252,6 +253,10 @@ export default function CampaignWorkflowPage() {
 
                             <div className="mt-4 flex flex-wrap gap-2 border-t border-[#EEF0F3] pt-3">
                                 {record.status === "Suggested" && <button className={buttonPrimary} disabled={busy} onClick={() => runAction(record, "invite")} type="button"><FiSend size={13} /> Record invitation</button>}
+                                {record.status === "Applied" && <>
+                                    <button className={buttonPrimary} disabled={busy} onClick={() => runAction(record, "accept_application")} type="button"><FiCheck size={13} /> Accept application</button>
+                                    <button className={buttonSecondary} disabled={busy} onClick={() => runAction(record, "decline_application")} type="button"><FiXCircle size={13} /> Decline application</button>
+                                </>}
                                 {record.status === "Invited" && <>
                                     <button className={buttonPrimary} disabled={busy} onClick={() => runAction(record, "accept")} type="button"><FiCheck size={13} /> Record acceptance</button>
                                     <button className={buttonSecondary} disabled={busy} onClick={() => runAction(record, "decline")} type="button"><FiXCircle size={13} /> Record decline</button>
