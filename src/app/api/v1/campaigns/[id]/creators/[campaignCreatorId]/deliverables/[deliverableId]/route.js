@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
+import { createNotification } from "@/lib/notifications";
 
 function jsonError(message, status) {
     return NextResponse.json({ error: message }, { status });
@@ -58,7 +59,7 @@ export async function PATCH(request, context) {
                         : { campaign: { ownerUserId: auth.user.id } }),
                 },
             },
-            include: { submissions: { orderBy: { version: "desc" }, take: 1 } },
+            include: { submissions: { orderBy: { version: "desc" }, take: 1 }, campaignCreator: { include: { campaign: { select: { ownerUserId: true, campaignDetails: true } }, creator: { select: { ownerUserId: true, displayName: true } } } } },
         });
         if (!deliverable) return jsonError("Deliverable not found.", 404);
         if (["Cancelled", "Completed", "Declined"].includes(deliverable.campaignCreator.status)) {
@@ -95,6 +96,13 @@ export async function PATCH(request, context) {
                         submittedAt: now,
                     },
                 });
+            });
+            await createNotification({
+                userId: deliverable.campaignCreator.campaign.ownerUserId,
+                type: "content_submission",
+                title: "Deliverable submitted",
+                message: (deliverable.campaignCreator.creator.displayName || "A creator") + " submitted “" + deliverable.title + "” for “" + (deliverable.campaignCreator.campaign.campaignDetails?.campaign_title || "Untitled campaign") + "”.",
+                href: "/dashboard/deliverables",
             });
             return NextResponse.json({
                 deliverable_id: deliverable.id,
@@ -158,6 +166,13 @@ export async function PATCH(request, context) {
             });
             collaborationStatus = collaboration?.status ?? collaborationStatus;
         }
+        await createNotification({
+            userId: deliverable.campaignCreator.creator.ownerUserId,
+            type: "content_review",
+            title: action === "approve" ? "Deliverable approved" : "Changes requested",
+            message: "The brand " + (action === "approve" ? "approved" : "requested changes to") + " “" + deliverable.title + "” for “" + (deliverable.campaignCreator.campaign.campaignDetails?.campaign_title || "Untitled campaign") + "”.",
+            href: "/dashboard/deliverables",
+        });
         return NextResponse.json({
             deliverable_id: deliverable.id,
             status: nextStatus,
