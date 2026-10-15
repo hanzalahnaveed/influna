@@ -24,7 +24,7 @@ export async function POST(request, context) {
             include: { socialAccounts: { include: {
                 snapshots: { orderBy: { observedAt: "desc" }, take: 1 },
                 audienceInsights: { orderBy: { observedAt: "desc" }, take: 1 },
-            } } },
+            } }, rateCards: { where: { isPublic: true }, orderBy: [{ platform: "asc" }, { price: "asc" }] } },
             orderBy: { createdAt: "desc" },
             take: 500,
         });
@@ -50,8 +50,27 @@ export async function POST(request, context) {
                 },
             });
             const profileSource = getCreatorSource(item.creator);
+            const paymentInformation = campaign.paymentInformation && typeof campaign.paymentInformation === "object" ? campaign.paymentInformation : {};
+            const budgetValue = Number(paymentInformation.campaign_budget);
+            const budgetCurrency = String(paymentInformation.budget_currency || "USD").toUpperCase();
+            const budget = Number.isFinite(budgetValue) && budgetValue > 0 ? budgetValue : null;
+            const publicRates = (item.creator.rateCards || []).map((rate) => ({
+                id: rate.id, platform: rate.platform, deliverable_type: rate.deliverableType,
+                price: Number(rate.price), currency: rate.currency, notes: rate.notes,
+            }));
+            const comparableRates = publicRates.filter((rate) => rate.currency === budgetCurrency);
+            const cheapestComparable = comparableRates.length ? Math.min(...comparableRates.map((rate) => rate.price)) : null;
+            const pricingFit = budget === null
+                ? { status: "budget_not_set", label: "Set a campaign budget to compare rates", budget: null, currency: budgetCurrency, cheapest_rate: cheapestComparable }
+                : cheapestComparable === null
+                    ? { status: publicRates.length ? "currency_mismatch" : "no_public_rate", label: publicRates.length ? "No rate in campaign currency" : "No public rate card", budget, currency: budgetCurrency, cheapest_rate: null }
+                    : cheapestComparable <= budget
+                        ? { status: "within_budget", label: "At least one listed rate is within budget", budget, currency: budgetCurrency, cheapest_rate: cheapestComparable }
+                        : { status: "over_budget", label: "Lowest listed rate exceeds budget", budget, currency: budgetCurrency, cheapest_rate: cheapestComparable };
             return {
                 campaign_creator_id: saved.id,
+                rate_cards: publicRates,
+                pricing_fit: pricingFit,
                 creator_id: item.creator.id,
                 profile_source: profileSource.key,
                 profile_source_label: profileSource.label,
@@ -111,7 +130,8 @@ export async function POST(request, context) {
             matching_method: "rule_based_v4",
             count: matches.length,
             matches,
-            disclaimer: "Profile-fit scores reflect criterion matches and are not reduced because profile fields or metrics are missing. Confidence combines criterion coverage with profile completeness, metric recency, account verification when metrics are used, and source reliability. Synthetic profiles are fictional benchmarks and their confidence is capped; they are not real creator recommendations. Scores are not predictions of campaign performance."
+            budget: (() => { const info = campaign.paymentInformation && typeof campaign.paymentInformation === "object" ? campaign.paymentInformation : {}; const amount = Number(info.campaign_budget); return Number.isFinite(amount) && amount > 0 ? { amount, currency: String(info.budget_currency || "USD").toUpperCase() } : null; })(),
+            disclaimer: "Profile-fit scores reflect criterion matches and are not reduced because profile fields or metrics are missing. Confidence combines criterion coverage with profile completeness, metric recency, account verification when metrics are used, and source reliability. Synthetic profiles are fictional benchmarks and their confidence is capped; they are not real creator recommendations. Budget fit compares the lowest public rate-card price in the campaign currency against the total campaign budget; it does not estimate total creator costs, convert currencies, or replace negotiation. Scores are not predictions of campaign performance."
         });
     } catch (error) {
         console.error("Failed to match creators:", error);
