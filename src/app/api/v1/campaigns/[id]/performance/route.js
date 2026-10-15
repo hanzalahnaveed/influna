@@ -116,6 +116,7 @@ export async function POST(request, context) {
         return jsonError("platform is required and must be 40 characters or fewer.", 400);
     }
     if (body.content_url !== undefined && body.content_url !== null && body.content_url !== "") {
+        if (typeof body.content_url !== "string") return jsonError("content_url must be a URL string.", 400);
         try {
             const url = new URL(body.content_url);
             if (!["http:", "https:"].includes(url.protocol)) throw new Error();
