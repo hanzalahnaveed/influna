@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { FiPlus, FiRefreshCw, FiSave, FiTrash2, FiUser, FiExternalLink } from "react-icons/fi";
+import { FiPlus, FiRefreshCw, FiSave, FiTrash2, FiUser, FiExternalLink, FiShield } from "react-icons/fi";
 
 const inputClass = "mt-1 w-full rounded-lg border border-[#D9DEE7] bg-white px-3 py-2.5 text-sm outline-none transition focus:border-[#FA8500]";
 const primaryButton = "inline-flex items-center justify-center gap-2 rounded-lg bg-[#FA8500] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#e87900] disabled:cursor-not-allowed disabled:opacity-60";
@@ -20,6 +20,8 @@ export default function CreatorProfilePage() {
     const [saving, setSaving] = useState(false);
     const [addingAccount, setAddingAccount] = useState(false);
     const [removingId, setRemovingId] = useState("");
+    const [requestingVerificationId, setRequestingVerificationId] = useState("");
+    const [verificationDrafts, setVerificationDrafts] = useState({});
     const [error, setError] = useState("");
     const [notice, setNotice] = useState("");
 
@@ -113,6 +115,28 @@ export default function CreatorProfilePage() {
             setError(err.message || "Could not add social account.");
         } finally {
             setAddingAccount(false);
+        }
+    }
+
+    async function requestVerification(account) {
+        setRequestingVerificationId(account.id);
+        setError("");
+        setNotice("");
+        const draft = verificationDrafts[account.id] || {};
+        try {
+            const response = await fetch(`/api/v1/creators/${encodeURIComponent(creatorId)}/social-accounts/${encodeURIComponent(account.id)}/verification`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ request_note: draft.request_note || "", evidence_url: draft.evidence_url || null }),
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data?.error || "Could not request verification.");
+            setNotice("Verification request submitted. It remains unverified until an authorized reviewer approves it.");
+            await loadProfile();
+        } catch (err) {
+            setError(err.message || "Could not request verification.");
+        } finally {
+            setRequestingVerificationId("");
         }
     }
 
