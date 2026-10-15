@@ -76,7 +76,7 @@ const Navbar = () => {
         <>
             {
                 !isDashboardRoute &&
-                <div className="absolute h-[10vh] px-10 w-[85%] flex justify-between items-center border-none rounded-3xl shadow my-[15px] bg-white/50">
+                <div className="absolute h-[10vh] px-10 w-[85%] flex justify-between items-center border-none rounded-3xl shadow my-[15px] bg-white/60">
                     <div
                         className="text-[30px] text-white cursor-pointer z-50"
                         onClick={() => router.push("/")}
