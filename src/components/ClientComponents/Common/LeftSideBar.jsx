@@ -7,7 +7,7 @@ import Link from "next/link";
 import { MdOutlineSpaceDashboard, MdOutlineCampaign } from "react-icons/md";
 import { IoSettingsOutline } from "react-icons/io5";
 import { IoIosLogOut } from "react-icons/io";
-import { FiUsers, FiGitPullRequest, FiMail, FiUser, FiFileText } from "react-icons/fi";
+import { FiUsers, FiGitPullRequest, FiMail, FiUser, FiFileText, FiBriefcase } from "react-icons/fi";
 
 const defaultMenu = [
     { id: 1, sidebar_name: "Dashboard", route: "/dashboard", icon: MdOutlineSpaceDashboard },
@@ -17,6 +17,7 @@ const defaultMenu = [
     { id: 5, sidebar_name: "Creator Invitations", route: "/dashboard/creator-invitations", icon: FiMail },
     { id: 6, sidebar_name: "My Creator Profile", route: "/dashboard/creator-profile", icon: FiUser },
     { id: 7, sidebar_name: "Deliverables", route: "/dashboard/deliverables", icon: FiFileText },
+    { id: 8, sidebar_name: "Explore Campaigns", route: "/dashboard/creator-campaigns", icon: FiBriefcase },
 ];
 
 const LeftSidebar = () => {
@@ -34,11 +35,12 @@ const LeftSidebar = () => {
                     const currentRole = response.ok ? data?.user?.role || "" : "";
                     setMenuItems(currentRole === "CREATOR"
                         ? [
+                            { id: 8, sidebar_name: "Explore Campaigns", route: "/dashboard/creator-campaigns", icon: FiBriefcase },
                             { id: 5, sidebar_name: "Creator Invitations", route: "/dashboard/creator-invitations", icon: FiMail },
                             { id: 6, sidebar_name: "My Creator Profile", route: "/dashboard/creator-profile", icon: FiUser },
                             { id: 7, sidebar_name: "Deliverables", route: "/dashboard/deliverables", icon: FiFileText },
                         ]
-                        : currentRole === "BRAND" ? defaultMenu.filter((item) => item.id !== 5 && item.id !== 6) : []);
+                        : currentRole === "BRAND" ? defaultMenu.filter((item) => ![5, 6, 8].includes(item.id)) : []);
                 }
             } catch {
                 if (!cancelled) setMenuItems([]);
