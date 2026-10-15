@@ -37,12 +37,17 @@ export async function PATCH(request, context) {
             return jsonError(`${key} must be a string.`, 400);
         }
     }
-    if (body.content_url) {
-        try {
-            const url = new URL(body.content_url);
-            if (!["http:", "https:"].includes(url.protocol)) throw new Error("Invalid protocol");
-        } catch {
-            return jsonError("content_url must be a valid HTTP or HTTPS URL.", 400);
+    if (body.content_url !== undefined && body.content_url !== null) {
+        if (body.content_url.trim().length > 2048) {
+            return jsonError("content_url must be 2,048 characters or fewer.", 400);
+        }
+        if (body.content_url.trim()) {
+            try {
+                const url = new URL(body.content_url.trim());
+                if (!["http:", "https:"].includes(url.protocol)) throw new Error("Invalid protocol");
+            } catch {
+                return jsonError("content_url must be a valid HTTP or HTTPS URL.", 400);
+            }
         }
     }
     if (body.content_note?.length > 2000 || body.review_note?.length > 2000) {
