@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { creatorPatchSchema, serializeCreator } from "@/lib/creators";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser, requireRole } from "@/lib/auth";
 
 function jsonError(message, status, details) {
     return NextResponse.json({ error: message, ...(details && { details }) }, { status });
@@ -19,8 +20,9 @@ const creatorInclude = {
 export async function GET(_request, context) {
     const { id } = await context.params;
     try {
+        const user = await getCurrentUser();
         const creator = await prisma.creatorProfile.findUnique({ where: { id }, include: creatorInclude });
-        if (!creator || !creator.isPublic) return jsonError("Creator not found.", 404);
+        if (!creator || (!creator.isPublic && creator.ownerUserId !== user?.id)) return jsonError("Creator not found.", 404);
         return NextResponse.json(serializeCreator(creator));
     } catch (error) {
         console.error("Failed to load creator:", error);
@@ -29,6 +31,8 @@ export async function GET(_request, context) {
 }
 
 export async function PATCH(request, context) {
+    const auth = await requireRole("CREATOR");
+    if (auth.response) return auth.response;
     const { id } = await context.params;
     let body;
     try {
@@ -42,7 +46,7 @@ export async function PATCH(request, context) {
     const input = parsed.data;
 
     try {
-        const existing = await prisma.creatorProfile.findUnique({ where: { id } });
+        const existing = await prisma.creatorProfile.findFirst({ where: { id, ownerUserId: auth.user.id } });
         if (!existing) return jsonError("Creator not found.", 404);
 
         const creator = await prisma.creatorProfile.update({
