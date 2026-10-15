@@ -96,6 +96,13 @@ model CampaignCreator {
   matchReasons Json           @default("[]")
   invitedAt    DateTime?
   acceptedAt   DateTime?
+  declinedAt   DateTime?
+  contentUrl   String?
+  contentNote  String?
+  contentSubmittedAt DateTime?
+  reviewNote   String?
+  reviewedAt   DateTime?
+  completedAt  DateTime?
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   campaign     Campaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
