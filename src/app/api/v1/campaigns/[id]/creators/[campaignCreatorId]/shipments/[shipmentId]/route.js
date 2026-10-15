@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
+import { createNotification } from "@/lib/notifications";
 
 function jsonError(message, status) {
     return NextResponse.json({ error: message }, { status });
@@ -50,7 +51,7 @@ export async function PATCH(request, context) {
                         : { campaign: { ownerUserId: auth.user.id } }),
                 },
             },
-            select: { id: true, status: true, campaignCreator: { select: { status: true } } },
+            select: { id: true, status: true, campaignCreator: { select: { status: true, creator: { select: { ownerUserId: true } }, campaign: { select: { ownerUserId: true, campaignDetails: true } } } } },
         });
         if (!shipment) return jsonError("Shipment not found.", 404);
         if (["Cancelled", "Declined", "Withdrawn"].includes(shipment.campaignCreator.status)) {
@@ -87,6 +88,19 @@ export async function PATCH(request, context) {
         });
         if (updatedCount.count !== 1) return jsonError("Shipment status changed or the requested transition is not allowed. Refresh and try again.", 409);
         const updated = await prisma.campaignShipment.findUnique({ where: { id: shipment.id } });
+        if (action !== "update_tracking" && updated.status !== shipment.status) {
+            const creatorId = shipment.campaignCreator.creator.ownerUserId;
+            const brandId = shipment.campaignCreator.campaign.ownerUserId;
+            const campaignTitle = shipment.campaignCreator.campaign.campaignDetails?.campaign_title || "your campaign collaboration";
+            const recipientId = action === "confirm_received" ? brandId : creatorId;
+            const messages = {
+                mark_shipped: { type: "SHIPMENT_SHIPPED", title: "Product shipment dispatched", message: `The brand marked the shipment for ${campaignTitle} as shipped.` },
+                mark_delivered: { type: "SHIPMENT_DELIVERED", title: "Product shipment delivered", message: `The shipment for ${campaignTitle} is marked as delivered. Please confirm receipt when it arrives.` },
+                confirm_received: { type: "SHIPMENT_RECEIVED", title: "Shipment receipt confirmed", message: `The creator confirmed receipt of the shipment for ${campaignTitle}.` },
+            };
+            const notification = messages[action];
+            if (notification) await createNotification({ ...notification, userId: recipientId, href: "/dashboard/commercials" });
+        }
         return NextResponse.json({
             shipment: {
                 id: updated.id,
