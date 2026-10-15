@@ -92,6 +92,10 @@ export async function POST(request, context) {
                 status: saved.status,
                 match_score: item.match_score,
                 match_confidence: item.match_confidence,
+                criteria_coverage: item.criteria_coverage,
+                data_quality_confidence: item.data_quality_confidence,
+                metrics_freshness: item.metrics_freshness,
+                metrics_age_days: item.metrics_age_days,
                 recommendation_tier: item.recommendation_tier,
                 recommendation_label: item.recommendation_label,
                 match_reasons: item.match_reasons,
@@ -104,10 +108,10 @@ export async function POST(request, context) {
 
         return NextResponse.json({
             campaign_id: campaignId,
-            matching_method: "rule_based_v3",
+            matching_method: "rule_based_v4",
             count: matches.length,
             matches,
-            disclaimer: "Scores are explainable profile-fit estimates, not predictions of campaign performance. Confidence indicates how much of the applicable criteria could be assessed. Missing metrics are not treated as mismatches; creator-provided metrics are not independently verified."
+            disclaimer: "Profile-fit scores reflect criterion matches and are not reduced because profile fields or metrics are missing. Confidence combines criterion coverage with profile completeness, metric recency, account verification when metrics are used, and source reliability. Synthetic profiles are fictional benchmarks and their confidence is capped; they are not real creator recommendations. Scores are not predictions of campaign performance."
         });
     } catch (error) {
         console.error("Failed to match creators:", error);
