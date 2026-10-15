@@ -142,7 +142,10 @@ export default function CreatorCampaignsPage() {
 
                                 <div className="mt-4 flex flex-wrap items-center gap-2">
                                     {canApply && <button type="button" className={primaryButton} onClick={() => apply(campaign)} disabled={busyId === campaign.id}><FiCheck size={14} /> {busyId === campaign.id ? "Applying..." : "Apply to campaign"}</button>}
-                                    {status === "Applied" && <p className="text-sm text-[#6B7280]">Application recorded. Check Creator Invitations for updates after the brand responds.</p>}
+                                    {status === "Applied" && <p className="text-sm text-[#6B7280]">Application recorded. Track its status in <a className="font-semibold text-[#B85E00] underline" href="/dashboard/creator-invitations">Applications & collaborations</a>.</p>}
+                                    {status === "Accepted" && <p className="text-sm text-[#6B7280]">Your application was accepted. Review requirements in <a className="font-semibold text-[#B85E00] underline" href="/dashboard/deliverables">Deliverables</a>.</p>}
+                                    {status === "Invited" && <p className="text-sm text-[#6B7280]">You have an invitation. Open <a className="font-semibold text-[#B85E00] underline" href="/dashboard/creator-invitations">Applications & collaborations</a> to respond.</p>}
+                                    {status === "Declined" && <p className="text-sm text-[#6B7280]">The brand declined this application.</p>}
                                     {!canApply && status !== "Applied" && <p className="text-sm text-[#6B7280]">This campaign already has an invitation or collaboration record for your profile.</p>}
                                 </div>
                             </article>
