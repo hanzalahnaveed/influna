@@ -18,6 +18,7 @@ model User {
   campaigns    Campaign[]
   creatorProfile CreatorProfile?
   notifications Notification[]
+  savedCreators SavedCreator[]
   @@index([role, createdAt])
 }
 
@@ -62,6 +63,7 @@ model CreatorProfile {
   updatedAt     DateTime          @updatedAt
   socialAccounts SocialAccount[]
   campaignLinks CampaignCreator[]
+  savedBy SavedCreator[]
   @@index([isPublic, createdAt])
   @@index([country, city])
 }
@@ -241,4 +243,17 @@ model Notification {
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@index([userId, readAt, createdAt])
+}
+
+
+model SavedCreator {
+  id        String        @id @default(cuid())
+  userId    String
+  creatorId String
+  createdAt DateTime      @default(now())
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  creator   CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  @@unique([userId, creatorId])
+  @@index([userId, createdAt])
+  @@index([creatorId])
 }
