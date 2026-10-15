@@ -23,6 +23,7 @@ export default function CreatorInvitationsPage() {
     const [busyId, setBusyId] = useState("");
     const [error, setError] = useState("");
     const [notice, setNotice] = useState("");
+    const [contentDrafts, setContentDrafts] = useState({});
 
     useEffect(() => {
         let cancelled = false;
@@ -92,6 +93,33 @@ export default function CreatorInvitationsPage() {
         }
     }
 
+    async function submitContent(invitation) {
+        const draft = contentDrafts[invitation.campaign_creator_id] || {};
+        if (!draft.content_url?.trim()) {
+            setError("Enter the published content URL before submitting.");
+            return;
+        }
+        setBusyId(invitation.campaign_creator_id);
+        setError("");
+        setNotice("");
+        try {
+            const response = await fetch(`/api/v1/campaigns/${encodeURIComponent(invitation.campaign_id)}/creators/${encodeURIComponent(invitation.campaign_creator_id)}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "submit_content", content_url: draft.content_url.trim(), content_note: draft.content_note || "" }),
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data?.error || "Could not submit content.");
+            setNotice("Content submission recorded. The brand can now review it.");
+            setContentDrafts((current) => ({ ...current, [invitation.campaign_creator_id]: { content_url: "", content_note: "" } }));
+            await loadInvitations(creatorId);
+        } catch (err) {
+            setError(err.message || "Could not submit content.");
+        } finally {
+            setBusyId("");
+        }
+    }
+
     return (
         <main className="flex flex-col gap-6 pb-8 text-[#212529]">
             <header>
@@ -133,6 +161,16 @@ export default function CreatorInvitationsPage() {
                                 <div><p className="text-xs text-[#6B7280]">Profile fit</p><p className="mt-1 text-sm font-medium">{invitation.match_score == null ? "Not scored" : `${Math.round(invitation.match_score)}%`}</p></div>
                             </div>
                             {invitation.content_url && <p className="mt-3 text-sm"><a className="text-[#B85E00] underline" href={invitation.content_url} target="_blank" rel="noreferrer">View submitted content</a></p>}
+                            {["Accepted", "ChangesRequested"].includes(invitation.status) && <form className="mt-4 flex flex-col gap-3 rounded-lg border border-[#E3E7ED] bg-[#F8F9FA] p-4" onSubmit={(event) => { event.preventDefault(); submitContent(invitation); }}>
+                                <div><h4 className="text-sm font-semibold">Submit or resubmit content</h4><p className="mt-1 text-xs text-[#6B7280]">Paste the URL of your draft or published content. This records the link; it does not upload a file.</p></div>
+                                <label className="text-xs font-semibold text-[#495057]">Content URL
+                                    <input className="mt-1 w-full rounded-lg border border-[#D9DEE7] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#FA8500]" type="url" required value={(contentDrafts[invitation.campaign_creator_id] || {}).content_url || ""} onChange={(event) => setContentDrafts((current) => ({ ...current, [invitation.campaign_creator_id]: { ...current[invitation.campaign_creator_id], content_url: event.target.value } }))} placeholder="https://..." />
+                                </label>
+                                <label className="text-xs font-semibold text-[#495057]">Note (optional)
+                                    <textarea className="mt-1 w-full rounded-lg border border-[#D9DEE7] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#FA8500]" rows={2} maxLength={2000} value={(contentDrafts[invitation.campaign_creator_id] || {}).content_note || ""} onChange={(event) => setContentDrafts((current) => ({ ...current, [invitation.campaign_creator_id]: { ...current[invitation.campaign_creator_id], content_note: event.target.value } }))} placeholder="Add context for the brand..." />
+                                </label>
+                                <div><button type="submit" className={primaryButton} disabled={busyId === invitation.campaign_creator_id}><FiCheck size={14} /> {busyId === invitation.campaign_creator_id ? "Submitting..." : invitation.status === "ChangesRequested" ? "Resubmit content" : "Submit content"}</button></div>
+                            </form>}
                             {invitation.review_note && <p className="mt-2 rounded-lg border border-amber-100 bg-amber-50 p-3 text-sm text-amber-900">Review feedback: {invitation.review_note}</p>}
                             {invitation.status === "Invited" && <div className="mt-4 flex flex-wrap gap-2">
                                 <button type="button" className={primaryButton} disabled={busyId === invitation.campaign_creator_id} onClick={() => respond(invitation, "accept")}><FiCheck size={14} /> Accept invitation</button>
