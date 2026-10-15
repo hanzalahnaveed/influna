@@ -32,7 +32,7 @@ export async function PATCH(request, context) {
                     ...(body.note !== undefined ? { note: body.note.trim() || null } : {}),
                     ...(body.reference !== undefined ? { reference: body.reference.trim() || null } : {}),
                 },
-                include: { campaignCreator: { include: { campaign: { select: { campaignDetails: true } }, creator: { select: { displayName: true } } } } },
+                include: { campaignCreator: { include: { campaign: { select: { campaignDetails: true } }, creator: { select: { displayName: true, ownerUserId: true } } } } },
             });
             if (updated.status !== existing.status) {
                 const campaignTitle = updated.campaignCreator.campaign.campaignDetails?.campaign_title || "your campaign collaboration";
