@@ -136,11 +136,29 @@ model CampaignCreator {
   campaign     Campaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   creator      CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   deliverables CampaignDeliverable[]
+  shipment     CampaignShipment?
   @@unique([campaignId, creatorId])
   @@index([campaignId, status])
   @@index([creatorId, status])
 }
 
+
+model CampaignShipment {
+  id                String         @id @default(cuid())
+  campaignCreatorId String         @unique
+  carrier           String?
+  trackingNumber    String?
+  trackingUrl       String?
+  status            String         @default("Preparing")
+  notes             String?
+  shippedAt         DateTime?
+  deliveredAt       DateTime?
+  receivedAt        DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  campaignCreator   CampaignCreator @relation(fields: [campaignCreatorId], references: [id], onDelete: Cascade)
+  @@index([status, updatedAt])
+}
 
 model CampaignDeliverable {
   id                 String                 @id @default(cuid())
