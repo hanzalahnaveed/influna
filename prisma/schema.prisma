@@ -45,6 +45,7 @@ model Campaign {
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
   creatorLinks       CampaignCreator[]
+  planItems          CampaignPlanItem[]
   @@index([status, createdAt])
 }
 
@@ -64,6 +65,7 @@ model CreatorProfile {
   socialAccounts SocialAccount[]
   campaignLinks CampaignCreator[]
   rateCards CreatorRateCard[]
+  planItems CampaignPlanItem[]
   savedBy SavedCreator[]
   @@index([isPublic, createdAt])
   @@index([country, city])
@@ -299,7 +301,29 @@ model CreatorRateCard {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   creator        CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  planItems      CampaignPlanItem[]
   @@unique([creatorId, platform, deliverableType])
   @@index([creatorId, isPublic])
   @@index([platform, currency, price])
+}
+
+model CampaignPlanItem {
+  id              String          @id @default(cuid())
+  campaignId      String
+  creatorId       String
+  rateCardId      String?
+  deliverableType String
+  platform        String
+  unitPrice       Decimal         @db.Decimal(12, 2)
+  currency        String          @default("USD")
+  quantity        Int             @default(1)
+  notes           String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  campaign        Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  creator         CreatorProfile  @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  rateCard        CreatorRateCard? @relation(fields: [rateCardId], references: [id], onDelete: SetNull)
+  @@index([campaignId, createdAt])
+  @@index([creatorId])
+  @@index([rateCardId])
 }
