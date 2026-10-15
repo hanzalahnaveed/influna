@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
+import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(_request, context) {
     const { id } = await context.params;
+    const user = await getCurrentUser();
+    if (!user) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+    if (user.role !== "CREATOR") return NextResponse.json({ error: "Creator account required." }, { status: 403 });
     try {
-        const creator = await prisma.creatorProfile.findUnique({ where: { id }, select: { id: true } });
+        const creator = await prisma.creatorProfile.findFirst({ where: { id, ownerUserId: user.id }, select: { id: true } });
         if (!creator) return NextResponse.json({ error: "Creator not found." }, { status: 404 });
 
         const links = await prisma.campaignCreator.findMany({
