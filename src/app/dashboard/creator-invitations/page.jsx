@@ -187,7 +187,7 @@ export default function CreatorInvitationsPage() {
                                     <FiXCircle size={14} /> {busyId === invitation.campaign_creator_id ? "Withdrawing..." : "Withdraw application"}
                                 </button>
                             </div>}
-                            {["Accepted", "ChangesRequested"].includes(invitation.status) && <form className="mt-4 flex flex-col gap-3 rounded-lg border border-[#E3E7ED] bg-[#F8F9FA] p-4" onSubmit={(event) => { event.preventDefault(); submitContent(invitation); }}>
+                            {["Accepted", "ChangesRequested"].includes(invitation.status) && (invitation.deliverable_count || 0) === 0 && <form className="mt-4 flex flex-col gap-3 rounded-lg border border-[#E3E7ED] bg-[#F8F9FA] p-4" onSubmit={(event) => { event.preventDefault(); submitContent(invitation); }}>
                                 <div><h4 className="text-sm font-semibold">Submit or resubmit content</h4><p className="mt-1 text-xs text-[#6B7280]">Paste the URL of your draft or published content. This records the link; it does not upload a file.</p></div>
                                 <label className="text-xs font-semibold text-[#495057]">Content URL
                                     <input className="mt-1 w-full rounded-lg border border-[#D9DEE7] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#FA8500]" type="url" required value={(contentDrafts[invitation.campaign_creator_id] || {}).content_url || ""} onChange={(event) => setContentDrafts((current) => ({ ...current, [invitation.campaign_creator_id]: { ...current[invitation.campaign_creator_id], content_url: event.target.value } }))} placeholder="https://..." />
@@ -197,6 +197,7 @@ export default function CreatorInvitationsPage() {
                                 </label>
                                 <div><button type="submit" className={primaryButton} disabled={busyId === invitation.campaign_creator_id}><FiCheck size={14} /> {busyId === invitation.campaign_creator_id ? "Submitting..." : invitation.status === "ChangesRequested" ? "Resubmit content" : "Submit content"}</button></div>
                             </form>}
+                            {(invitation.deliverable_count || 0) > 0 && !["Completed", "Cancelled", "Declined"].includes(invitation.status) && <p className="mt-4 rounded-lg border border-sky-100 bg-sky-50/60 px-3 py-2 text-sm leading-5 text-sky-900">This collaboration has {invitation.deliverable_count} deliverable{invitation.deliverable_count === 1 ? "" : "s"}. Submit work and respond to revision requests from the <a className="font-semibold underline" href="/dashboard/deliverables">Deliverables page</a>.</p>}
                             {invitation.review_note && <p className="mt-2 rounded-lg border border-amber-100 bg-amber-50 p-3 text-sm text-amber-900">Review feedback: {invitation.review_note}</p>}
                             {invitation.status === "Invited" && <div className="mt-4 flex flex-wrap gap-2">
                                 <button type="button" className={primaryButton} disabled={busyId === invitation.campaign_creator_id} onClick={() => respond(invitation, "accept")}><FiCheck size={14} /> Accept invitation</button>
