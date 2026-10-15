@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FiSearch, FiUsers, FiMapPin, FiGlobe, FiPlus, FiX, FiRefreshCw } from "react-icons/fi";
+import { FiSearch, FiUsers, FiMapPin, FiGlobe, FiRefreshCw } from "react-icons/fi";
 
 const inputClass = "w-full rounded-lg border border-[#D9DEE7] bg-white px-3 py-2.5 text-sm outline-none transition focus:border-[#FA8500]";
 const primaryButton = "inline-flex items-center justify-center gap-2 rounded-lg bg-[#FA8500] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#e87900] disabled:cursor-not-allowed disabled:opacity-60";
@@ -23,9 +23,6 @@ export default function CreatorDiscoveryPage() {
     const [matching, setMatching] = useState(false);
     const [error, setError] = useState("");
     const [notice, setNotice] = useState("");
-    const [showForm, setShowForm] = useState(false);
-    const [saving, setSaving] = useState(false);
-    const [draft, setDraft] = useState({ display_name: "", bio: "", country: "", city: "", categories: "", languages: "", platform: "Instagram", handle: "" });
 
     const loadCreators = useCallback(async () => {
         setLoading(true);
@@ -89,38 +86,6 @@ export default function CreatorDiscoveryPage() {
         }
     }
 
-    async function createCreator(event) {
-        event.preventDefault();
-        setSaving(true);
-        setError("");
-        setNotice("");
-        try {
-            const body = {
-                display_name: draft.display_name.trim(),
-                bio: draft.bio.trim() || null,
-                country: draft.country.trim() || null,
-                city: draft.city.trim() || null,
-                categories: draft.categories.split(",").map((value) => value.trim()).filter(Boolean),
-                languages: draft.languages.split(",").map((value) => value.trim()).filter(Boolean),
-                social_accounts: draft.handle.trim() ? [{ platform: draft.platform, handle: draft.handle.trim() }] : [],
-            };
-            const response = await fetch("/api/v1/creators", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(body),
-            });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data?.error || "Could not save creator.");
-            setDraft({ display_name: "", bio: "", country: "", city: "", categories: "", languages: "", platform: "Instagram", handle: "" });
-            setShowForm(false);
-            setNotice("Creator profile added.");
-            await loadCreators();
-        } catch (err) {
-            setError(err.message || "Could not save creator.");
-        } finally {
-            setSaving(false);
-        }
-    }
 
     const matchIds = new Set(matches.map((match) => match.creator_id));
 
@@ -132,56 +97,11 @@ export default function CreatorDiscoveryPage() {
                     <h1 className="text-2xl font-bold tracking-tight sm:text-[28px]">Creator discovery</h1>
                     <p className="mt-1 max-w-2xl text-sm text-[#6B7280]">Find relevant creators, review their listed social profiles, and shortlist candidates for a campaign.</p>
                 </div>
-                <button className={primaryButton} onClick={() => setShowForm((value) => !value)} type="button">
-                    {showForm ? <FiX size={16} /> : <FiPlus size={16} />}
-                    {showForm ? "Close form" : "Add creator"}
-                </button>
+                <span className="text-xs text-[#6B7280]">Browse public creator profiles</span>
             </header>
 
             {error && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
             {notice && <div role="status" className="rounded-lg border border-[#FAD7AE] bg-[#FFF7ED] px-4 py-3 text-sm text-[#8A4B08]">{notice}</div>}
-
-            {showForm && (
-                <form onSubmit={createCreator} className="rounded-xl border border-[#E3E7ED] bg-white p-5 shadow-sm">
-                    <div className="mb-4">
-                        <h2 className="font-semibold">Add a creator profile</h2>
-                        <p className="mt-1 text-xs text-[#6B7280]">Enter information you have permission to store. A listed handle is not an API-verified account.</p>
-                    </div>
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        <label className="text-xs font-medium text-[#495057]">Display name *
-                            <input required className={inputClass + " mt-1"} value={draft.display_name} onChange={(e) => setDraft({ ...draft, display_name: e.target.value })} placeholder="Creator or channel name" />
-                        </label>
-                        <label className="text-xs font-medium text-[#495057]">Country
-                            <input className={inputClass + " mt-1"} value={draft.country} onChange={(e) => setDraft({ ...draft, country: e.target.value })} placeholder="Pakistan" />
-                        </label>
-                        <label className="text-xs font-medium text-[#495057]">City
-                            <input className={inputClass + " mt-1"} value={draft.city} onChange={(e) => setDraft({ ...draft, city: e.target.value })} placeholder="Lahore" />
-                        </label>
-                        <label className="text-xs font-medium text-[#495057]">Categories (comma-separated)
-                            <input className={inputClass + " mt-1"} value={draft.categories} onChange={(e) => setDraft({ ...draft, categories: e.target.value })} placeholder="beauty, lifestyle, tech" />
-                        </label>
-                        <label className="text-xs font-medium text-[#495057]">Languages (comma-separated)
-                            <input className={inputClass + " mt-1"} value={draft.languages} onChange={(e) => setDraft({ ...draft, languages: e.target.value })} placeholder="Urdu, English" />
-                        </label>
-                        <label className="text-xs font-medium text-[#495057]">Short bio
-                            <input className={inputClass + " mt-1"} value={draft.bio} onChange={(e) => setDraft({ ...draft, bio: e.target.value })} placeholder="What does this creator make?" />
-                        </label>
-                        <div className="flex gap-2 sm:col-span-2 lg:col-span-3">
-                            <label className="w-36 shrink-0 text-xs font-medium text-[#495057]">Platform
-                                <select className={inputClass + " mt-1"} value={draft.platform} onChange={(e) => setDraft({ ...draft, platform: e.target.value })}>
-                                    {["Instagram", "TikTok", "YouTube", "Facebook", "Other"].map((platform) => <option key={platform}>{platform}</option>)}
-                                </select>
-                            </label>
-                            <label className="flex-1 text-xs font-medium text-[#495057]">Social handle (optional)
-                                <input className={inputClass + " mt-1"} value={draft.handle} onChange={(e) => setDraft({ ...draft, handle: e.target.value })} placeholder="@creatorhandle" />
-                            </label>
-                        </div>
-                    </div>
-                    <div className="mt-4 flex justify-end">
-                        <button className={primaryButton} disabled={saving} type="submit">{saving ? "Saving..." : "Save creator"}</button>
-                    </div>
-                </form>
-            )}
 
             <section className="rounded-xl border border-[#E3E7ED] bg-white p-4 shadow-sm">
                 <div className="mb-3 flex items-center gap-2 text-sm font-semibold"><FiSearch className="text-[#FA8500]" /> Search creators</div>
