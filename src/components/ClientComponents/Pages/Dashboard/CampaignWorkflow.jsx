@@ -211,8 +211,8 @@ export default function CampaignWorkflowPage() {
                                             {(record.social_accounts || []).map((account) => (
                                                 <span key={account.id} className="inline-flex flex-wrap items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1.5 text-xs text-slate-600">
                                                     {account.platform} · @{account.handle}
-                                                    <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${account.is_verified ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
-                                                        {account.is_verified ? "Verified" : "Unverified"}
+                                                    <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${account.is_verified ? "bg-emerald-100 text-emerald-800" : account.verification_status === "pending" ? "bg-sky-100 text-sky-800" : account.verification_status === "rejected" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-800"}`}>
+                                                        {account.is_verified ? "Verified" : account.verification_status === "pending" ? "Pending review" : account.verification_status === "rejected" ? "Rejected" : "Unverified"}
                                                     </span>
                                                     {account.latest_metrics && <span className="text-[10px] text-slate-500">{(account.latest_metrics.data_source || "unknown").replaceAll("_", " ")} metrics</span>}
                                                 </span>
