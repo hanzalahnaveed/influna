@@ -199,8 +199,20 @@ export default function CreatorProfilePage() {
                             <article key={account.id} className="flex flex-col gap-3 rounded-lg border border-[#E3E7ED] p-4 sm:flex-row sm:items-center sm:justify-between">
                                 <div className="min-w-0">
                                     <p className="font-semibold">{account.platform} · @{account.handle}</p>
-                                    <p className="mt-1 text-xs text-[#6B7280]">Data source: {account.account_data_source || "creator provided"} · Not API-verified</p>
+                                    <span className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${account.is_verified ? "bg-emerald-50 text-emerald-700" : account.verification_status === "pending" ? "bg-sky-50 text-sky-700" : account.verification_status === "rejected" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-800"}`}>
+                                        {account.is_verified ? "Verified" : account.verification_status === "pending" ? "Pending review" : account.verification_status === "rejected" ? "Verification rejected" : "Unverified"}
+                                    </span>
+                                    <p className="mt-1 text-xs text-[#6B7280]">Metrics source: {account.latest_metrics?.data_source || account.account_data_source || "creator provided"}. A handle alone does not prove ownership.</p>
+                                    {account.verification_review_note && <p className="mt-2 text-xs text-[#8A4B08]">Reviewer feedback: {account.verification_review_note}</p>}
                                     {account.profile_url && <a className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-[#B85E00] underline" href={account.profile_url} target="_blank" rel="noreferrer"><FiExternalLink size={12} /> Open profile</a>}
+                                    {!account.is_verified && account.verification_status !== "pending" && <div className="mt-3 grid gap-2">
+                                        <input className={inputClass} type="url" placeholder="Evidence URL (optional)" value={verificationDrafts[account.id]?.evidence_url || ""} onChange={(event) => setVerificationDrafts((current) => ({ ...current, [account.id]: { ...current[account.id], evidence_url: event.target.value } }))} />
+                                        <textarea className={inputClass} rows={2} maxLength={1000} placeholder="Context for reviewer (optional)" value={verificationDrafts[account.id]?.request_note || ""} onChange={(event) => setVerificationDrafts((current) => ({ ...current, [account.id]: { ...current[account.id], request_note: event.target.value } }))} />
+                                        <button type="button" className={secondaryButton} onClick={() => requestVerification(account)} disabled={requestingVerificationId === account.id}>
+                                            {requestingVerificationId === account.id ? "Submitting..." : account.verification_status === "rejected" ? "Request review again" : "Request verification"}
+                                        </button>
+                                    </div>}
+                                    {account.verification_status === "pending" && <p className="mt-2 text-xs text-[#6B7280]">Awaiting authorized review. You cannot approve your own account.</p>}
                                 </div>
                                 <button type="button" className={secondaryButton} onClick={() => removeSocialAccount(account)} disabled={removingId === account.id}><FiTrash2 size={14} /> {removingId === account.id ? "Removing..." : "Remove"}</button>
                             </article>
