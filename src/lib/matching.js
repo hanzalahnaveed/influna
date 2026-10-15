@@ -4,9 +4,27 @@ function normalizedList(value) {
     return [];
 }
 
+function normalizedKey(value) {
+    return String(value ?? "").toLowerCase().replace(/[\s\-–—_]/g, "");
+}
+
 function intersects(left, right) {
     const normalizedLeft = normalizedList(left);
-    return normalizedLeft.some((item) => right.some((candidate) => item === candidate || item.includes(candidate) || candidate.includes(item)));
+    const normalizedRight = normalizedList(right);
+    return normalizedLeft.some((item) => normalizedRight.some((candidate) =>
+        item === candidate || item.includes(candidate) || candidate.includes(item)
+    ));
+}
+
+function breakdownShare(breakdown, expected) {
+    if (!breakdown || typeof breakdown !== "object" || Array.isArray(breakdown)) return null;
+    const wanted = normalizedKey(expected);
+    const entry = Object.entries(breakdown).find(([key]) => normalizedKey(key) === wanted);
+    if (!entry) return 0;
+    const value = Number(entry[1]);
+    if (!Number.isFinite(value)) return 0;
+    // Audience APIs commonly represent shares as either 0..1 or 0..100.
+    return Math.max(0, Math.min(100, value <= 1 ? value * 100 : value));
 }
 
 function accountMetrics(creator) {
@@ -17,100 +35,233 @@ function accountMetrics(creator) {
     }));
 }
 
-function normalizedKey(value) {
-    return String(value ?? "").toLowerCase().replace(/[\s\-–—_]/g, "");
+function textContainsAny(text, terms) {
+    const haystack = String(text ?? "").toLowerCase();
+    return terms.some((term) => term.length > 2 && haystack.includes(term));
 }
 
-function breakdownContains(breakdown, expected) {
-    if (!breakdown || typeof breakdown !== "object" || Array.isArray(breakdown)) return false;
-    const expectedKey = normalizedKey(expected);
-    return Object.entries(breakdown).some(([key, value]) =>
-        normalizedKey(key) === expectedKey && Number(value) > 0
-    );
+function objectiveTerms(objective, description) {
+    const text = [objective, description].filter(Boolean).join(" ").toLowerCase();
+    const groups = [
+        { terms: ["awareness", "reach", "visibility", "recognition"], label: "awareness" },
+        { terms: ["engagement", "community", "conversation", "interaction"], label: "engagement" },
+        { terms: ["sales", "conversion", "purchase", "revenue", "orders"], label: "sales and conversions" },
+        { terms: ["traffic", "clicks", "website", "visits"], label: "website traffic" },
+        { terms: ["launch", "new product", "product introduction"], label: "product launch" },
+        { terms: ["content", "ugc", "user generated"], label: "content creation" },
+        { terms: ["leads", "lead generation", "signups", "registrations"], label: "lead generation" },
+    ];
+    return groups.filter((group) => group.terms.some((term) => text.includes(term)));
+}
+
+function classifyScore(score, confidence) {
+    if (confidence < 30) return { tier: "insufficient_data", label: "More data needed" };
+    if (score >= 80) return { tier: "strong_fit", label: "Strong profile fit" };
+    if (score >= 60) return { tier: "promising_fit", label: "Promising fit" };
+    return { tier: "limited_fit", label: "Limited profile fit" };
 }
 
 export function scoreCreatorForCampaign(campaign, creator) {
     const target = campaign.targetingCriteria ?? {};
     const platformDetails = campaign.platformDetails ?? {};
+    const campaignDetails = campaign.campaignDetails ?? {};
     const accounts = accountMetrics(creator);
     const reasons = [];
-    let score = 0;
-    let possible = 0;
-    const addFactor = (weight, matched, positive, negative) => {
-        possible += weight;
-        if (matched) {
-            score += weight;
-            reasons.push(positive);
-        } else reasons.push(negative);
+    const factors = [];
+    const missingData = [];
+    let weightedScore = 0;
+    let evaluatedWeight = 0;
+    let potentialWeight = 0;
+
+    const addFactor = ({ key, label, weight, value, reason, unavailable }) => {
+        potentialWeight += weight;
+        if (value === null || value === undefined) {
+            if (unavailable) missingData.push(unavailable);
+            return;
+        }
+        const normalized = Math.max(0, Math.min(1, value));
+        evaluatedWeight += weight;
+        weightedScore += normalized * weight;
+        factors.push({ key, label, weight, score: Math.round(normalized * 100) });
+        if (reason) reasons.push(reason);
     };
 
-    const wantedCategories = normalizedList(target.campaign_interest ?? target.interests ?? target.categories);
-    if (wantedCategories.length) addFactor(35, intersects(creator.categories, wantedCategories),
-        "Creator categories match campaign interests.", "Creator categories do not currently match the campaign interests.");
+    const wantedCategories = normalizedList(target.campaign_interest ?? target.interests ?? target.categories ?? platformDetails.campaign_genere);
+    if (wantedCategories.length) {
+        const matched = intersects(creator.categories, wantedCategories);
+        addFactor({
+            key: "category_alignment", label: "Category alignment", weight: 25, value: matched ? 1 : 0,
+            reason: matched ? "Creator categories align with the campaign interests." : "Listed creator categories do not currently align with the campaign interests.",
+        });
+    }
+
+    const objective = String(campaignDetails.campaign_objective ?? "").trim();
+    const description = String(campaignDetails.campaign_description ?? "").trim();
+    const objectiveGroups = objectiveTerms(objective, description);
+    if (objectiveGroups.length) {
+        const terms = objectiveGroups.flatMap((group) => group.terms);
+        const creatorText = [creator.bio, ...(creator.categories ?? [])].filter(Boolean).join(" ");
+        const matched = textContainsAny(creatorText, terms);
+        addFactor({
+            key: "objective_alignment", label: "Objective/content alignment", weight: 15, value: matched ? 1 : 0,
+            reason: matched
+                ? "Creator bio or categories contain signals related to the campaign objective."
+                : "Campaign objective is set, but creator profile text does not yet show a clear related signal.",
+        });
+    } else if (objective || description) {
+        missingData.push("Objective alignment could not be categorized from the current campaign brief.");
+    }
 
     const wantedLocation = String(target.campaign_location ?? target.location ?? "").trim().toLowerCase();
     if (wantedLocation) {
         const creatorLocation = [creator.city, creator.country].filter(Boolean).join(" ").toLowerCase();
-        addFactor(20, creatorLocation.includes(wantedLocation),
-            "Creator location matches the campaign location.", "Creator location may not match the campaign location.");
+        const locationAvailable = Boolean(creator.city || creator.country);
+        addFactor({
+            key: "creator_location", label: "Creator location", weight: 10,
+            value: locationAvailable ? (creatorLocation.includes(wantedLocation) ? 1 : 0) : null,
+            reason: locationAvailable ? (creatorLocation.includes(wantedLocation)
+                ? "Creator location matches the requested campaign location."
+                : "Creator location does not exactly match the requested campaign location.") : null,
+            unavailable: "Creator location is not provided.",
+        });
     }
 
-    const wantedLanguages = normalizedList(target.campaign_language ?? target.languages);
-    if (wantedLanguages.length) addFactor(10, intersects(creator.languages, wantedLanguages),
-        "Creator language matches campaign requirements.", "Creator language does not currently match the requested language.");
+    const wantedLanguages = normalizedList(target.campaign_language ?? target.languages ?? platformDetails.campaign_language);
+    if (wantedLanguages.length) {
+        const hasLanguages = Array.isArray(creator.languages) && creator.languages.length > 0;
+        const matched = intersects(creator.languages, wantedLanguages);
+        addFactor({
+            key: "language_alignment", label: "Language alignment", weight: 10,
+            value: hasLanguages ? (matched ? 1 : 0) : null,
+            reason: hasLanguages ? (matched ? "Creator lists a requested campaign language." : "Creator has not listed one of the requested languages.") : null,
+            unavailable: "Creator language information is missing.",
+        });
+    }
 
     const wantedPlatforms = normalizedList(platformDetails.campaign_platform ?? platformDetails.platforms);
-    if (wantedPlatforms.length) addFactor(15, intersects(accounts.map((account) => account.platform), wantedPlatforms),
-        "Creator has an account on a requested platform.", "Creator does not have a listed account on a requested platform.");
+    if (wantedPlatforms.length) {
+        const availablePlatforms = accounts.map((account) => account.platform);
+        addFactor({
+            key: "platform_alignment", label: "Platform alignment", weight: 15,
+            value: accounts.length ? (intersects(availablePlatforms, wantedPlatforms) ? 1 : 0) : null,
+            reason: accounts.length ? (intersects(availablePlatforms, wantedPlatforms)
+                ? "Creator has a listed account on a requested platform."
+                : "No listed creator account matches the requested platforms.") : null,
+            unavailable: "Creator has no listed social accounts.",
+        });
+    }
 
-    const followerValues = accounts.map((account) => account.latestSnapshot?.followerCount).filter((value) => Number.isFinite(value));
-    const minFollowers = Number(target.min_followers);
-    const maxFollowers = Number(target.max_followers);
-    if (followerValues.length && (target.min_followers !== undefined && target.min_followers !== "" || target.max_followers !== undefined && target.max_followers !== "")) {
-        const hasAccountInRange = followerValues.some((count) =>
-            (!Number.isFinite(minFollowers) || minFollowers <= 0 || count >= minFollowers) &&
-            (!Number.isFinite(maxFollowers) || maxFollowers <= 0 || count <= maxFollowers)
-        );
-        addFactor(10, hasAccountInRange,
-            "Recorded follower count fits the requested range.", "Recorded follower count falls outside the requested range.");
-    } else if (target.min_followers || target.max_followers) {
-        reasons.push("Follower-range fit could not be assessed because creator metrics are unavailable.");
+    const minFollowers = target.min_followers === undefined || target.min_followers === "" ? null : Number(target.min_followers);
+    const maxFollowers = target.max_followers === undefined || target.max_followers === "" ? null : Number(target.max_followers);
+    if ((minFollowers !== null && Number.isFinite(minFollowers)) || (maxFollowers !== null && Number.isFinite(maxFollowers))) {
+        const followerValues = accounts.map((account) => account.latestSnapshot?.followerCount).filter((value) => Number.isFinite(value));
+        if (followerValues.length) {
+            const fits = followerValues.some((count) =>
+                (minFollowers === null || !Number.isFinite(minFollowers) || minFollowers <= 0 || count >= minFollowers) &&
+                (maxFollowers === null || !Number.isFinite(maxFollowers) || maxFollowers <= 0 || count <= maxFollowers)
+            );
+            addFactor({
+                key: "follower_range", label: "Follower range", weight: 10, value: fits ? 1 : 0,
+                reason: fits ? "A recorded follower count fits the requested range." : "Recorded follower counts fall outside the requested range.",
+            });
+        } else {
+            missingData.push("Follower range cannot be assessed because recent follower counts are unavailable.");
+        }
+    }
+
+    const minEngagement = target.min_engagement_rate === undefined || target.min_engagement_rate === "" ? null : Number(target.min_engagement_rate);
+    if (minEngagement !== null && Number.isFinite(minEngagement)) {
+        const values = accounts.map((account) => account.latestSnapshot?.engagementRate).filter((value) => Number.isFinite(value));
+        if (values.length) {
+            const best = Math.max(...values);
+            const fit = minEngagement <= 0 ? 1 : Math.min(1, best / minEngagement);
+            addFactor({
+                key: "engagement_rate", label: "Engagement rate", weight: 10, value: fit,
+                reason: best >= minEngagement
+                    ? "Recorded engagement rate meets the requested minimum."
+                    : "Recorded engagement rate is below the requested minimum.",
+            });
+        } else {
+            missingData.push("Engagement-rate fit cannot be assessed because recent metrics are unavailable.");
+        }
     }
 
     const wantedAge = String(target.campaign_age_range ?? "").trim();
     if (wantedAge) {
-        const ageInsights = accounts.map((account) => account.latestAudienceInsight?.ageBreakdown).filter((breakdown) => breakdown && typeof breakdown === "object" && Object.keys(breakdown).length > 0);
-        if (ageInsights.length) addFactor(10, ageInsights.some((breakdown) => breakdownContains(breakdown, wantedAge)),
-            "Recorded audience age breakdown includes the target age range.", "Recorded audience age breakdown does not show the target age range.");
-        else reasons.push("Audience age fit could not be assessed because audience insights are unavailable.");
+        const ageBreakdowns = accounts.map((account) => account.latestAudienceInsight?.ageBreakdown).filter(Boolean);
+        if (ageBreakdowns.length) {
+            const shares = ageBreakdowns.map((breakdown) => breakdownShare(breakdown, wantedAge)).filter((value) => value !== null);
+            if (shares.length) {
+                const bestShare = Math.max(...shares);
+                addFactor({
+                    key: "audience_age", label: "Audience age", weight: 10, value: bestShare / 100,
+                    reason: bestShare > 0 ? "Recorded audience age data includes the requested age segment." : "Recorded audience age data does not include the requested age segment.",
+                });
+            } else missingData.push("Audience age breakdown is not in a recognized format.");
+        } else missingData.push("Audience age fit cannot be assessed because audience insights are unavailable.");
     }
 
     const wantedGender = String(target.campaign_gender ?? "").trim();
     if (wantedGender && wantedGender.toLowerCase() !== "all") {
-        const genderInsights = accounts.map((account) => account.latestAudienceInsight?.genderBreakdown).filter((breakdown) => breakdown && typeof breakdown === "object" && Object.keys(breakdown).length > 0);
-        if (genderInsights.length) addFactor(10, genderInsights.some((breakdown) => breakdownContains(breakdown, wantedGender)),
-            "Recorded audience gender breakdown includes the target.", "Recorded audience gender breakdown does not show the target.");
-        else reasons.push("Audience gender fit could not be assessed because audience insights are unavailable.");
+        const genderBreakdowns = accounts.map((account) => account.latestAudienceInsight?.genderBreakdown).filter(Boolean);
+        if (genderBreakdowns.length) {
+            const shares = genderBreakdowns.map((breakdown) => breakdownShare(breakdown, wantedGender)).filter((value) => value !== null);
+            if (shares.length) {
+                const bestShare = Math.max(...shares);
+                addFactor({
+                    key: "audience_gender", label: "Audience gender", weight: 10, value: bestShare / 100,
+                    reason: bestShare > 0 ? "Recorded audience data includes the requested gender segment." : "Recorded audience data does not include the requested gender segment.",
+                });
+            } else missingData.push("Audience gender breakdown is not in a recognized format.");
+        } else missingData.push("Audience gender fit cannot be assessed because audience insights are unavailable.");
     }
 
-    const engagementValues = accounts.map((account) => account.latestSnapshot?.engagementRate).filter((value) => Number.isFinite(value));
-    const minEngagement = Number(target.min_engagement_rate);
-    if (target.min_engagement_rate !== undefined && target.min_engagement_rate !== "") {
-        if (engagementValues.length) addFactor(10, Math.max(...engagementValues) >= minEngagement,
-            "Recorded engagement rate meets the requested minimum.", "Recorded engagement rate is below the requested minimum.");
-        else reasons.push("Engagement-rate fit could not be assessed because metrics are unavailable.");
+    const wantedAudienceCountry = String(target.audience_country ?? target.target_audience_country ?? "").trim();
+    if (wantedAudienceCountry) {
+        const countryBreakdowns = accounts.map((account) => account.latestAudienceInsight?.countryBreakdown).filter(Boolean);
+        if (countryBreakdowns.length) {
+            const shares = countryBreakdowns.map((breakdown) => breakdownShare(breakdown, wantedAudienceCountry)).filter((value) => value !== null);
+            if (shares.length) {
+                const bestShare = Math.max(...shares);
+                addFactor({
+                    key: "audience_geography", label: "Audience geography", weight: 15, value: bestShare / 100,
+                    reason: bestShare >= 25 ? "Recorded audience geography shows a meaningful share in the target market." : "Recorded audience geography shows limited share in the target market.",
+                });
+            } else missingData.push("Audience geography breakdown is not in a recognized format.");
+        } else missingData.push("Audience geography fit cannot be assessed because audience insights are unavailable.");
     }
 
     if (accounts.some((account) => account.latestSnapshot?.dataSource === "creator_provided")) {
         reasons.push("Some account metrics are creator-provided and have not been independently verified.");
     }
-    const availablePossible = possible;
+    if (accounts.some((account) => account.latestSnapshot?.dataSource && account.latestSnapshot.dataSource !== "creator_provided")) {
+        reasons.push("At least one account has a recorded metric source other than creator-provided data; verification status should still be checked separately.");
+    }
+    if (accounts.some((account) => account.verificationStatus !== "VERIFIED" && !account.verifiedAt)) {
+        missingData.push("Some social accounts are not verified.");
+    }
+    if (!creator.bio) missingData.push("Creator bio is not provided.");
+    if (!creator.categories?.length) missingData.push("Creator categories are not provided.");
+
+    const score = evaluatedWeight ? Math.round((weightedScore / evaluatedWeight) * 100) : 0;
+    const confidence = potentialWeight ? Math.round((evaluatedWeight / potentialWeight) * 100) : 0;
+    const recommendation = classifyScore(score, confidence);
+    const campaignBudget = Number(campaign.paymentInformation?.campaign_budget);
+    const hasBudget = Number.isFinite(campaignBudget) && campaignBudget > 0;
+    if (hasBudget) missingData.push("Budget fit is not scored because creator rate cards are not yet captured in creator profiles.");
+    if (!evaluatedWeight) reasons.push("Not enough matching criteria are configured to produce a meaningful profile-fit score.");
+
     return {
-        match_score: availablePossible ? Math.round((score / availablePossible) * 100) : 0,
+        match_score: score,
+        match_confidence: confidence,
+        recommendation_tier: recommendation.tier,
+        recommendation_label: recommendation.label,
         match_reasons: reasons,
-        score_type: "rule_based_v2",
-        note: availablePossible
-            ? "Explainable profile-fit score based on available campaign criteria. Missing metric data is not scored as a mismatch; this is not a performance prediction."
-            : "No supported targeting fields were provided, so this score is not meaningful yet.",
+        match_factors: factors,
+        missing_data: [...new Set(missingData)],
+        score_type: "rule_based_v3",
+        note: evaluatedWeight
+            ? "Explainable profile-fit score using available campaign and creator data. Confidence indicates how much of the applicable criteria could be assessed; this is not a prediction of campaign performance."
+            : "No applicable matching criteria could be assessed. Complete the campaign brief and creator data before relying on this recommendation.",
     };
 }
