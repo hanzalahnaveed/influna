@@ -61,8 +61,11 @@ export async function PATCH(request, context) {
             include: { submissions: { orderBy: { version: "desc" }, take: 1 } },
         });
         if (!deliverable) return jsonError("Deliverable not found.", 404);
-        if (["Cancelled", "Completed"].includes(deliverable.campaignCreator.status)) {
+        if (["Cancelled", "Completed", "Declined"].includes(deliverable.campaignCreator.status)) {
             return jsonError("This collaboration is no longer active.", 409);
+        }
+        if (isCreator && deliverable.campaignCreator.status !== "Accepted") {
+            return jsonError("The creator must accept the collaboration before submitting deliverables.", 409);
         }
 
         const latest = deliverable.submissions[0];
