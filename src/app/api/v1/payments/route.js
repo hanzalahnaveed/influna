@@ -70,7 +70,9 @@ export async function POST(request) {
         });
         if (!link) return jsonError("Collaboration not found.", 404);
         if (link.proposalStatus !== "AGREED" || link.agreedFee === null) return jsonError("Agree the collaboration fee before creating payment records.", 409);
-        if (link.status === "Cancelled" || link.status === "Declined" || link.status === "Withdrawn") return jsonError("Payments cannot be planned for a cancelled or declined collaboration.", 409);
+        if (!["Accepted", "ContentSubmitted", "ChangesRequested", "Approved", "Completed"].includes(link.status)) {
+            return jsonError("The creator must accept the collaboration before payment records can be created.", 409);
+        }
         if (currency !== link.feeCurrency) return jsonError("Payment currency must match the agreed collaboration fee currency.", 409);
         const existingTotal = await prisma.campaignPaymentRecord.aggregate({
             where: { campaignCreatorId: link.id, status: { not: "CANCELLED" } },
