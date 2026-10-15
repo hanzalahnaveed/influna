@@ -217,7 +217,7 @@ export default function DeliverablesPage() {
                 {!loading && !canChoose && <p className="mt-3 text-sm text-[#6B7280]">{isBrand ? "Create a campaign and generate creator suggestions, then record an invitation to start defining deliverables." : "No creator invitations found for this account yet."}</p>}
             </section>
 
-            {isBrand && campaignId && linkId && (
+            {isBrand && campaignId && linkId && selectedLink?.status === "Accepted" && (
                 <form onSubmit={createDeliverable} className="rounded-xl border border-[#E3E7ED] bg-white p-4 shadow-sm sm:p-5">
                     <h2 className="mb-3 flex items-center gap-2 font-semibold"><FiFileText /> Add deliverable requirement</h2>
                     <div className="grid gap-3 sm:grid-cols-2">
@@ -235,11 +235,17 @@ export default function DeliverablesPage() {
                 </form>
             )}
 
+            {isBrand && campaignId && linkId && selectedLink && selectedLink.status !== "Accepted" && (
+                <div role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                    Deliverables can be defined after the creator accepts this collaboration. Current status: {prettyStatus(selectedLink.status)}.
+                </div>
+            )}
+
             <section className="flex flex-col gap-4">
                 <div className="flex items-center justify-between"><h2 className="text-lg font-semibold">Deliverable checklist</h2><span className="text-xs text-[#6B7280]">{deliverables.length} items</span></div>
                 {loading ? <div className="rounded-xl border border-[#E3E7ED] bg-white p-10 text-center text-sm text-[#6B7280]">Loading deliverables...</div>
                 : !linkId ? <div className="rounded-xl border border-dashed border-[#CBD2DC] bg-white p-10 text-center text-sm text-[#6B7280]">Select a collaboration to view its deliverables.</div>
-                : deliverables.length === 0 ? <div className="rounded-xl border border-dashed border-[#CBD2DC] bg-white p-10 text-center"><FiFileText size={26} className="mx-auto text-[#9CA3AF]" /><h3 className="mt-3 font-semibold">No deliverables yet</h3><p className="mt-1 text-sm text-[#6B7280]">{isBrand ? "Add the first requirement above so the creator knows exactly what to submit." : "The brand has not defined any deliverable requirements for this collaboration yet."}</p></div>
+                : deliverables.length === 0 ? <div className="rounded-xl border border-dashed border-[#CBD2DC] bg-white p-10 text-center"><FiFileText size={26} className="mx-auto text-[#9CA3AF]" /><h3 className="mt-3 font-semibold">No deliverables yet</h3><p className="mt-1 text-sm text-[#6B7280]">{isBrand ? (selectedLink?.status === "Accepted" ? "Add the first requirement above so the creator knows exactly what to submit." : "The creator must accept this collaboration before deliverables can be defined.") : "The brand has not defined any deliverable requirements for this collaboration yet."}</p></div>
                 : deliverables.map((item) => {
                     const draft = drafts[item.id] || {};
                     const latest = item.submissions?.[0];
