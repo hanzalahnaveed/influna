@@ -282,6 +282,14 @@ export default function CreatorDiscoveryPage() {
                                         )}
                                     </div>
                                 </div>
+                                <div className="mt-3 rounded-lg border border-[#E3E7ED] bg-white p-3">
+                                    <div className="flex flex-wrap items-start justify-between gap-2">
+                                        <div><p className="text-xs font-semibold uppercase tracking-wide text-[#6B7280]">Budget fit</p><p className="mt-1 text-sm font-medium text-[#212529]">{match.pricing_fit?.label || "No pricing data"}</p></div>
+                                        {match.pricing_fit?.cheapest_rate !== null && match.pricing_fit?.cheapest_rate !== undefined && <span className="text-sm font-semibold text-[#9A4D00]">From {new Intl.NumberFormat(undefined, { style: "currency", currency: match.pricing_fit.currency || "USD", maximumFractionDigits: 2 }).format(match.pricing_fit.cheapest_rate)}</span>}
+                                    </div>
+                                    {match.rate_cards?.length > 0 && <div className="mt-2 flex flex-wrap gap-1.5">{match.rate_cards.slice(0, 4).map(rate => <span key={rate.id} className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] text-[#495057]">{rate.platform} · {rate.deliverable_type}: {new Intl.NumberFormat(undefined, { style: "currency", currency: rate.currency, maximumFractionDigits: 2 }).format(rate.price)}</span>)}</div>}
+                                    <p className="mt-2 text-[10px] leading-4 text-[#9CA3AF]">Indicative public rates only. Total costs may differ; currency conversion is not applied.</p>
+                                </div>
                                 {match.note && <p className="mt-3 text-xs leading-5 text-[#6B7280]">{match.note}</p>}
                                 {match.match_factors?.length > 0 && <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{match.match_factors.map((factor) => <div key={factor.key} className="rounded-lg bg-slate-50 p-2.5"><div className="flex items-center justify-between gap-2"><span className="text-xs font-medium text-[#495057]">{factor.label}</span><span className="text-xs font-semibold text-[#495057]">{factor.score}%</span></div><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200"><div className="h-full rounded-full bg-[#FA8500]" style={{ width: factor.score + "%" }} /></div></div>)}</div>}
                                 {match.match_reasons?.length > 0 && <ul className="mt-3 list-inside list-disc space-y-1 text-xs text-[#495057]">{match.match_reasons.map((reason, index) => <li key={index}>{reason}</li>)}</ul>}
