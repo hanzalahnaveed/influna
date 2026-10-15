@@ -22,7 +22,6 @@ const LeftSidebar = () => {
     const pathname = usePathname();
     const router = useRouter();
     const [menuItems, setMenuItems] = useState(defaultMenu);
-    const [role, setRole] = useState("");
 
     useEffect(() => {
         let cancelled = false;
@@ -32,7 +31,6 @@ const LeftSidebar = () => {
                 const data = await response.json();
                 if (!cancelled) {
                     const currentRole = response.ok ? data?.user?.role || "" : "";
-                    setRole(currentRole);
                     setMenuItems(currentRole === "CREATOR"
                         ? [
                             { id: 5, sidebar_name: "Creator Invitations", route: "/dashboard/creator-invitations", icon: FiMail },
@@ -41,7 +39,7 @@ const LeftSidebar = () => {
                         : currentRole === "BRAND" ? defaultMenu.filter((item) => item.id !== 5 && item.id !== 6) : []);
                 }
             } catch {
-                if (!cancelled) { setRole(""); setMenuItems([]); }
+                if (!cancelled) setMenuItems([]);
             }
         }
         loadRole();
