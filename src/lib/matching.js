@@ -78,7 +78,7 @@ export function scoreCreatorForCampaign(campaign, creator) {
 
     const wantedAge = String(target.campaign_age_range ?? "").trim();
     if (wantedAge) {
-        const ageInsights = accounts.map((account) => account.latestAudienceInsight?.ageBreakdown).filter(Boolean);
+        const ageInsights = accounts.map((account) => account.latestAudienceInsight?.ageBreakdown).filter((breakdown) => breakdown && typeof breakdown === "object" && Object.keys(breakdown).length > 0);
         if (ageInsights.length) addFactor(10, ageInsights.some((breakdown) => breakdownContains(breakdown, wantedAge)),
             "Recorded audience age breakdown includes the target age range.", "Recorded audience age breakdown does not show the target age range.");
         else reasons.push("Audience age fit could not be assessed because audience insights are unavailable.");
@@ -86,7 +86,7 @@ export function scoreCreatorForCampaign(campaign, creator) {
 
     const wantedGender = String(target.campaign_gender ?? "").trim();
     if (wantedGender && wantedGender.toLowerCase() !== "all") {
-        const genderInsights = accounts.map((account) => account.latestAudienceInsight?.genderBreakdown).filter(Boolean);
+        const genderInsights = accounts.map((account) => account.latestAudienceInsight?.genderBreakdown).filter((breakdown) => breakdown && typeof breakdown === "object" && Object.keys(breakdown).length > 0);
         if (genderInsights.length) addFactor(10, genderInsights.some((breakdown) => breakdownContains(breakdown, wantedGender)),
             "Recorded audience gender breakdown includes the target.", "Recorded audience gender breakdown does not show the target.");
         else reasons.push("Audience gender fit could not be assessed because audience insights are unavailable.");
