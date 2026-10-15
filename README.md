@@ -37,7 +37,10 @@ For production, configure `DATABASE_URL`, run `npm run db:generate` during the b
 | `GET` | `/api/v1/creators/:id` | Get one public creator and latest recorded metrics |
 | `PATCH` | `/api/v1/creators/:id` | Update creator profile fields |
 | `POST` | `/api/v1/social-accounts/:id/snapshots` | Record a timestamped social-metric snapshot |
-| `POST` | `/api/v1/campaigns/:id/matches` | Calculate and save transparent rule-based creator matches |\n| `GET` | `/api/v1/campaigns/:id/creators` | List creator records and workflow status for a campaign |\n| `PATCH` | `/api/v1/campaigns/:id/creators/:campaignCreatorId` | Apply a validated creator collaboration workflow transition |
+| `POST` | `/api/v1/campaigns/:id/matches` | Calculate and save transparent rule-based creator matches |
+| `GET` | `/api/v1/campaigns/:id/creators` | List creator records and workflow status for a campaign |
+| `PATCH` | `/api/v1/campaigns/:id/creators/:campaignCreatorId` | Apply a validated creator collaboration workflow transition |
+| `GET` | `/api/v1/creators/:id/invitations` | Preview invitations and collaborations for a creator profile |
 
 Campaign JSON uses `campaign_details`, `targeting_criteria`, `platform_details`, and `payment_information`. Payment information is stored as terms only; no charges or payment-provider operations are performed. Complete campaigns are validated on create/update; drafts may be incomplete.
 
@@ -49,4 +52,6 @@ The matching endpoint currently uses a deterministic, explainable rule-based sco
 
 ## Important limitations
 
-The dashboard includes a manual campaign collaboration tracker with Suggested → Invited → Accepted/Declined → ContentSubmitted → ChangesRequested/Approved → Completed states, plus cancellation. The tracker records operator-entered status; it does not send invitations, notify creators, or authenticate a creator response. Content links and review notes are stored with timestamps.\n\nAuthentication, per-user authorization, creator consent/ownership verification, Meta OAuth/API integration, automated invitations/notifications, payment execution, and production monitoring are not implemented yet. The API is not safe to expose publicly until authentication and authorization are added. Do not use real creator data in a public demo without permission.
+The dashboard includes a manual campaign collaboration tracker with Suggested → Invited → Accepted/Declined → ContentSubmitted → ChangesRequested/Approved → Completed states, plus cancellation. A creator invitation inbox prototype can preview campaign invitations and record accept/decline responses. It uses a profile selector rather than authenticated creator accounts and must not be treated as a secure creator portal. The tracker does not send invitations or notifications. Content links and review notes are stored with timestamps.
+
+Authentication, per-user authorization, creator consent/ownership verification, Meta OAuth/API integration, automated invitations/notifications, payment execution, and production monitoring are not implemented yet. The API is not safe to expose publicly until authentication and authorization are added. Do not use real creator data in a public demo without permission.
