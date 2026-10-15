@@ -37,6 +37,11 @@ For production, configure `DATABASE_URL`, run `npm run db:generate` during the b
 | `DELETE` | `/api/v1/campaigns/:id` | Delete a campaign |
 | `GET` | `/api/v1/dashboard` | Get campaign totals by status |
 | `GET` | `/api/v1/reports/campaigns` | Summarize owned campaign collaboration and deliverable progress |
+| `GET` | `/api/v1/campaigns/:id/creators/:campaignCreatorId/commercials` | Read proposal and agreed commercial terms for a collaboration |
+| `PATCH` | `/api/v1/campaigns/:id/creators/:campaignCreatorId/commercials` | Send/revise offers, accept/reject offers, counteroffer, or accept a counteroffer with role and ownership checks |
+| `GET` | `/api/v1/payments` | List payment records for the signed-in brand or creator |
+| `POST` | `/api/v1/payments` | Create a planned payment record against an agreed fee (brand only) |
+| `PATCH` | `/api/v1/payments/:id` | Update a payment record status (brand only) |
 | `GET` | `/api/v1/creators` | List public creator profiles; optional `search` and `country` filters |
 | `POST` | `/api/v1/creators` | Create a creator profile and social-account handles |
 | `GET` | `/api/v1/creators/:id` | Get one public creator and latest recorded metrics |
@@ -62,7 +67,7 @@ For production, configure `DATABASE_URL`, run `npm run db:generate` during the b
 
 Brand-only campaign endpoints and creator-only profile/invitation endpoints require an active session. Campaign reads and writes are scoped to the signed-in brand owner; creator profile updates, metric snapshots, invitations, and content submissions are scoped to the signed-in creator. New creator profiles start private. Existing records without an owner remain in the database but are not visible through owner-scoped campaign endpoints. Passwords are hashed with Node.js scrypt; sessions use random opaque tokens stored as SHA-256 digests and an HTTP-only, SameSite=Strict cookie.
 
-Campaign JSON uses `campaign_details`, `targeting_criteria`, `platform_details`, and `payment_information`. Payment information is stored as terms only; no charges or payment-provider operations are performed. Complete campaigns are validated on create/update; drafts may be incomplete.
+Campaign JSON uses `campaign_details`, `targeting_criteria`, `platform_details`, and `payment_information`. Campaign-level payment information remains a place for general terms; collaboration-specific offers and negotiated fees are stored on the campaign-creator relationship. Complete campaigns are validated on create/update; drafts may be incomplete.
 
 ## Creator data and matching
 
@@ -75,3 +80,10 @@ The Campaign Reports dashboard summarizes creator collaboration states, delivera
 The Deliverables dashboard lets brands define per-creator requirements, descriptions, and deadlines; creators submit content URLs as versioned submissions; brands can request revisions or approve a version. Each revision is retained with its URL, notes, timestamp, status, and reviewer feedback. The Product Shipping dashboard lets brands record a carrier, tracking number/URL, shipment notes, and manually advance shipment status; creators can confirm receipt after the brand marks the package delivered. These are workflow records only—media is not uploaded, posts are not published, and notifications/payments are not triggered. Creator discovery supports name/bio/category search, country filtering, plus client-side platform and category filters. Creators can browse active campaigns at `/dashboard/creator-campaigns` and apply directly; brands can accept or decline applications in Creator Workflow. Brands can calculate preliminary profile-fit matches and record an invitation directly from a match card; invitations appear in the creator inbox, but recording an invitation does not deliver an external message. The dashboard includes a manual campaign collaboration tracker with Suggested → Invited → Accepted/Declined → ContentSubmitted → ChangesRequested/Approved → Completed states, plus cancellation. Creator accounts can manage their own profile and social handles at `/dashboard/creator-profile`, review invitations at `/dashboard/creator-invitations`, and submit or resubmit content URLs for brand review. The tracker does not send invitations or notifications, and social handles are self-reported until a real platform authorization/verification flow is implemented. Content links and review notes are stored with timestamps.
 
 Email verification, password reset, rate limiting/abuse controls, CSRF tokens for cross-site deployments, Meta OAuth/API integration, automated invitations/notifications, payment execution, and production monitoring are not implemented yet. Creator verification requests and an admin review interface are available at `/dashboard/admin-verification`; the interface and review APIs require an `ADMIN` database role. Admin accounts must be provisioned through a trusted database/operations process; public registration must never offer the `ADMIN` role. Authentication and ownership checks now cover the primary campaign, creator, invitation, matching, metric-snapshot, and dashboard APIs, but this is still an early-stage foundation and requires a security review before production exposure. Do not use real creator data in a public demo without permission.
+
+
+## Commercial operations
+
+Brands can send an offer with a fee, currency, payment terms, and note to a linked creator. Creators can accept or reject an offer, or submit a counteroffer. Brands can accept a counteroffer or send a revised offer. Accepted terms are stored as an agreed fee and cannot be silently overwritten by a new offer. Payment records support planned, processing, paid, and cancelled statuses, due dates, references, and notes. Multiple installments are supported, the payment currency must match the agreed fee currency, and non-cancelled payment records cannot exceed the agreed fee. Paid and cancelled payment records are terminal.
+
+The dashboard is available at `/dashboard/commercials` for brand and creator accounts. These are **manual commercial and ledger records**, not a payment processor: no money is charged or transferred, and marking a record paid is an explicit manual action after an external payment has been confirmed. Payment provider integration, invoices/tax workflows, dispute handling, and notification delivery remain future work.
