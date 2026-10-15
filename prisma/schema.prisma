@@ -7,8 +7,34 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  role         String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  sessions     Session[]
+  campaigns    Campaign[]
+  creatorProfile CreatorProfile?
+  @@index([role, createdAt])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, expiresAt])
+  @@index([expiresAt])
+}
+
 model Campaign {
   id                 String            @id @default(cuid())
+  ownerUserId        String?
+  owner              User?             @relation(fields: [ownerUserId], references: [id], onDelete: SetNull)
   campaignDetails    Json              @default("{}")
   targetingCriteria  Json              @default("{}")
   platformDetails    Json              @default("{}")
@@ -28,6 +54,8 @@ model CreatorProfile {
   country       String?
   city          String?
   languages     String[]          @default([])
+  ownerUserId   String?           @unique
+  owner         User?             @relation(fields: [ownerUserId], references: [id], onDelete: SetNull)
   isPublic      Boolean           @default(true)
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
