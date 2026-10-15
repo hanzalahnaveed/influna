@@ -10,6 +10,7 @@ const transitions = {
     invite: { from: ["Suggested"], to: "Invited" },
     accept_application: { from: ["Applied"], to: "Accepted" },
     decline_application: { from: ["Applied"], to: "Declined" },
+    withdraw_application: { from: ["Applied"], to: "Withdrawn" },
     accept: { from: ["Invited"], to: "Accepted" },
     decline: { from: ["Invited"], to: "Declined" },
     submit_content: { from: ["Accepted", "ChangesRequested"], to: "ContentSubmitted" },
@@ -48,7 +49,7 @@ export async function PATCH(request, context) {
         return jsonError("Notes must be 2,000 characters or fewer.", 400);
     }
 
-    const isCreatorResponse = ["accept", "decline", "submit_content"].includes(body.action);
+    const isCreatorResponse = ["accept", "decline", "submit_content", "withdraw_application"].includes(body.action);
     const auth = await requireRole(isCreatorResponse ? "CREATOR" : "BRAND");
     if (auth.response) return auth.response;
 
