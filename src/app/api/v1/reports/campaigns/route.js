@@ -76,7 +76,7 @@ export async function GET() {
         const totals = reports.reduce((sum, report) => ({
             campaigns: sum.campaigns + 1,
             creators: sum.creators + report.creators.total,
-            active_collaborations: sum.active_collaborations + report.creators.accepted + report.creators.submitted + report.creators.changes_requested,
+            active_collaborations: sum.active_collaborations + report.creators.accepted + report.creators.submitted + report.creators.changes_requested + report.creators.approved,
             completed_collaborations: sum.completed_collaborations + report.creators.completed,
             deliverables: sum.deliverables + report.deliverables.total,
             approved_deliverables: sum.approved_deliverables + report.deliverables.approved,
