@@ -1,6 +1,6 @@
 # Influna
 
-Influna is a Next.js app with a PostgreSQL-backed campaign API.
+Influna is a Next.js app with a PostgreSQL-backed campaign API and the first creator-marketplace foundation.
 
 ## Run locally
 
@@ -8,8 +8,8 @@ Requirements: Node.js 20+ and PostgreSQL 14+.
 
 1. Install packages with `npm install`.
 2. Create a PostgreSQL database named `influna`.
-3. Copy `.env.example` to `.env` and set `DATABASE_URL` to the connection string for your database.
-4. Generate the Prisma client and create the database tables:
+3. Copy `.env.example` to `.env` and set `DATABASE_URL` to your database connection string.
+4. Generate the Prisma client and apply migrations:
 
    ```bash
    npm run db:generate
@@ -18,26 +18,35 @@ Requirements: Node.js 20+ and PostgreSQL 14+.
 
 5. Start the app with `npm run dev`.
 
-The frontend and API run together at `http://localhost:3000`. There is no separate service on port 8000.
+The frontend and API run together at `http://localhost:3000`; there is no separate service on port 8000.
 
-For a production deployment, configure `DATABASE_URL`, run `npm run db:generate` during the build, and run `npm run db:deploy` before serving traffic.
+For production, configure `DATABASE_URL`, run `npm run db:generate` during the build, and run `npm run db:deploy` before serving traffic.
 
 ## API
-
-All endpoints return JSON except successful deletes, which return `204 No Content`.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
 | `GET` | `/api/v1/campaigns` | List campaigns, newest first |
-| `GET` | `/api/v1/campaigns?status=Draft` | Filter campaigns by `Active`, `Draft`, `Completed`, or `Cancelled` |
-| `POST` | `/api/v1/campaigns` | Create a campaign; send the campaign sections used by the UI |
+| `POST` | `/api/v1/campaigns` | Create a campaign using the UI's campaign sections |
 | `GET` | `/api/v1/campaigns/:id` | Get one campaign |
 | `PUT` | `/api/v1/campaigns/:id` | Partially update campaign sections |
 | `DELETE` | `/api/v1/campaigns/:id` | Delete a campaign |
 | `GET` | `/api/v1/dashboard` | Get campaign totals by status |
+| `GET` | `/api/v1/creators` | List public creator profiles; optional `search` and `country` filters |
+| `POST` | `/api/v1/creators` | Create a creator profile and social-account handles |
+| `GET` | `/api/v1/creators/:id` | Get one public creator and latest recorded metrics |
+| `PATCH` | `/api/v1/creators/:id` | Update creator profile fields |
+| `POST` | `/api/v1/social-accounts/:id/snapshots` | Record a timestamped social-metric snapshot |
+| `POST` | `/api/v1/campaigns/:id/matches` | Calculate and save transparent rule-based creator matches |
 
-Campaign JSON uses `campaign_details`, `targeting_criteria`, `platform_details`, and `payment_information` sections. Campaign payment information is stored as terms only; no charges or payment-provider operations are performed. Complete campaigns are validated on create/update; drafts may be incomplete.
+Campaign JSON uses `campaign_details`, `targeting_criteria`, `platform_details`, and `payment_information`. Payment information is stored as terms only; no charges or payment-provider operations are performed. Complete campaigns are validated on create/update; drafts may be incomplete.
 
-## Access and security
+## Creator data and matching
 
-Authentication and per-user ownership are not implemented. As currently built, anyone who can reach the app can read, create, update, and delete campaigns. Do not expose this API publicly until authentication and authorization are added.
+Creator profile fields and social-account handles are supplied by the creator unless otherwise stated. Each metrics snapshot requires a `data_source` of `creator_provided`, `meta_api`, `platform_api`, or `manual_review`, and records when it was observed. These labels are provenance supplied by the caller, not proof that an API connection or verification has occurred. Do not label metrics as API-sourced unless they really came from an authorized platform integration.
+
+The matching endpoint currently uses a deterministic, explainable rule-based score for categories/interests, location, language, and requested platform. It is a preliminary fit score, **not** an AI prediction of campaign performance. Audience insights and historical metric snapshots are stored separately so future ranking can distinguish audience fit from performance fit.
+
+## Important limitations
+
+Authentication, per-user authorization, creator consent/ownership verification, Meta OAuth/API integration, content approvals, campaign invitations, payment execution, and production monitoring are not implemented yet. The API is not safe to expose publicly until authentication and authorization are added. Do not use real creator data in a public demo without permission.
