@@ -61,23 +61,33 @@ export async function POST(request) {
     const input = parsed.data;
 
     try {
-        const creator = await prisma.creatorProfile.create({
-            data: {
-                displayName: input.display_name,
-                bio: input.bio ?? null,
-                categories: input.categories ?? [],
-                country: input.country ?? null,
-                city: input.city ?? null,
-                languages: input.languages ?? [],
-                isPublic: input.is_public ?? false,
+        const profileData = {
+            displayName: input.display_name,
+            bio: input.bio ?? null,
+            categories: input.categories ?? [],
+            country: input.country ?? null,
+            city: input.city ?? null,
+            languages: input.languages ?? [],
+            isPublic: input.is_public ?? false,
+        };
+        const socialAccounts = input.social_accounts?.length ? {
+            create: input.social_accounts.map((account) => ({
+                platform: account.platform,
+                handle: account.handle.replace(/^@/, ""),
+                profileUrl: account.profile_url ?? null,
+            })),
+        } : undefined;
+
+        const creator = await prisma.creatorProfile.upsert({
+            where: { ownerUserId: auth.user.id },
+            create: {
+                ...profileData,
                 ownerUserId: auth.user.id,
-                socialAccounts: input.social_accounts?.length ? {
-                    create: input.social_accounts.map((account) => ({
-                        platform: account.platform,
-                        handle: account.handle.replace(/^@/, ""),
-                        profileUrl: account.profile_url ?? null,
-                    })),
-                } : undefined,
+                socialAccounts,
+            },
+            update: {
+                ...profileData,
+                socialAccounts,
             },
             include: creatorInclude,
         });
