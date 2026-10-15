@@ -22,6 +22,13 @@ export async function GET() {
                         payments: {
                             select: { amount: true, currency: true, status: true },
                         },
+                        performanceSnapshots: {
+                            select: {
+                                impressions: true, reach: true, likes: true, comments: true, shares: true,
+                                saves: true, clicks: true, conversions: true, attributedRevenue: true,
+                                currency: true, capturedAt: true,
+                            },
+                        },
                     },
                 },
             },
@@ -49,6 +56,13 @@ export async function GET() {
             const agreedFees = links.filter((link) => link.proposalStatus === "AGREED" && link.agreedFee !== null)
                 .map((link) => ({ currency: link.feeCurrency || "USD", amount: Number(link.agreedFee) }));
             const payments = links.flatMap((link) => link.payments || []);
+            const performanceSnapshots = links.flatMap((link) => link.performanceSnapshots || []);
+            const performanceSum = (field) => performanceSnapshots.reduce((sum, item) => sum + (item[field] ?? 0), 0);
+            const trackedCreatorCount = links.filter((link) => (link.performanceSnapshots || []).length > 0).length;
+            const attributedRevenue = currencyTotals(
+                performanceSnapshots.filter((item) => item.attributedRevenue !== null),
+                (item) => Number(item.attributedRevenue)
+            );
             const paymentTotals = (statusFilter) => currencyTotals(
                 payments.filter((payment) => statusFilter.includes(payment.status)),
                 (payment) => Number(payment.amount)
@@ -97,6 +111,16 @@ export async function GET() {
                     const decided = acceptedPath + countStatus("Declined");
                     return decided ? Math.round((acceptedPath / decided) * 100) : null;
                 })(),
+                performance: {
+                    snapshot_count: performanceSnapshots.length,
+                    tracked_creator_count: trackedCreatorCount,
+                    impressions: performanceSum("impressions"),
+                    reach: performanceSum("reach"),
+                    engagements: performanceSum("likes") + performanceSum("comments") + performanceSum("shares") + performanceSum("saves"),
+                    clicks: performanceSum("clicks"),
+                    conversions: performanceSum("conversions"),
+                    attributed_revenue: attributedRevenue,
+                },
                 commercials: {
                     agreed_creator_fees: currencyTotals(agreedFees, (item) => item.amount),
                     planned_or_processing: paymentTotals(["PLANNED", "PROCESSING"]),
@@ -119,10 +143,18 @@ export async function GET() {
             on_time_approved_deliverables: sum.on_time_approved_deliverables + report.deliverables.approved_by_deadline,
             approved_deliverables_with_deadline: sum.approved_deliverables_with_deadline + report.deliverables.approved_with_deadline,
             deliverables_with_deadline: sum.deliverables_with_deadline + report.deliverables.with_deadline,
+            performance_snapshots: sum.performance_snapshots + report.performance.snapshot_count,
+            tracked_creators: sum.tracked_creators + report.performance.tracked_creator_count,
+            impressions: sum.impressions + report.performance.impressions,
+            reach: sum.reach + report.performance.reach,
+            engagements: sum.engagements + report.performance.engagements,
+            clicks: sum.clicks + report.performance.clicks,
+            conversions: sum.conversions + report.performance.conversions,
         }), {
             campaigns: 0, creators: 0, active_collaborations: 0, completed_collaborations: 0,
             deliverables: 0, approved_deliverables: 0, overdue_deliverables: 0,
             on_time_approved_deliverables: 0, approved_deliverables_with_deadline: 0, deliverables_with_deadline: 0,
+            performance_snapshots: 0, tracked_creators: 0, impressions: 0, reach: 0, engagements: 0, clicks: 0, conversions: 0,
         });
         totals.on_time_approval_rate = totals.approved_deliverables_with_deadline
             ? Math.round((totals.on_time_approved_deliverables / totals.approved_deliverables_with_deadline) * 100)
