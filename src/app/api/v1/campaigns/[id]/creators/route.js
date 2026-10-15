@@ -22,16 +22,6 @@ export async function GET(_request, context) {
                     select: { id: true, title: true, dueAt: true, status: true },
                     orderBy: [{ dueAt: "asc" }, { createdAt: "asc" }],
                 },
-                proposalStatus: true,
-                proposedFee: true,
-                counterFee: true,
-                agreedFee: true,
-                feeCurrency: true,
-                paymentTerms: true,
-                proposalNote: true,
-                counterNote: true,
-                proposalSentAt: true,
-                proposalRespondedAt: true,
                 creator: {
                     include: {
                         socialAccounts: {

@@ -17,7 +17,8 @@ export default function CampaignPlanPage() {
     const [draft, setDraft] = useState(emptyDraft);
     const [budget, setBudget] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);\n    const [busyCreatorId, setBusyCreatorId] = useState("");
+    const [saving, setSaving] = useState(false);
+    const [busyCreatorId, setBusyCreatorId] = useState("");
     const [error, setError] = useState("");
     const [notice, setNotice] = useState("");
 
