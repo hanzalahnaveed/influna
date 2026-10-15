@@ -115,7 +115,8 @@ export default function CampaignPlanPage() {
             if (!response.ok) throw new Error(data?.error || "Could not save plan.");
             setItems((data.items || []).map(item => ({ creator_id: item.creator_id, rate_card_id: item.rate_card_id || "", quantity: String(item.quantity), notes: item.notes || "", unit_price: item.unit_price, currency: item.currency, platform: item.platform, deliverable_type: item.deliverable_type, creator_name: item.creator_name, current_rate: item.current_rate, current_rate_currency: item.current_rate_currency })));
             setNotice("Campaign plan saved.");
-        } catch (err) { setError(err.message || "Could not save plan."); }
+            return true;
+        } catch (err) { setError(err.message || "Could not save plan."); return false; }
         finally { setSaving(false); }
     }
 
