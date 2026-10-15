@@ -7,7 +7,7 @@ import Link from "next/link";
 import { MdOutlineSpaceDashboard, MdOutlineCampaign } from "react-icons/md";
 import { IoSettingsOutline } from "react-icons/io5";
 import { IoIosLogOut } from "react-icons/io";
-import { FiUsers, FiGitPullRequest, FiMail, FiUserCircle } from "react-icons/fi";
+import { FiUsers, FiGitPullRequest, FiMail, FiUser } from "react-icons/fi";
 
 const defaultMenu = [
     { id: 1, sidebar_name: "Dashboard", route: "/dashboard", icon: MdOutlineSpaceDashboard },
@@ -15,7 +15,7 @@ const defaultMenu = [
     { id: 3, sidebar_name: "Creators", route: "/dashboard/creators", icon: FiUsers },
     { id: 4, sidebar_name: "Creator Workflow", route: "/dashboard/campaign-workflow", icon: FiGitPullRequest },
     { id: 5, sidebar_name: "Creator Invitations", route: "/dashboard/creator-invitations", icon: FiMail },
-    { id: 6, sidebar_name: "My Creator Profile", route: "/dashboard/creator-profile", icon: FiUserCircle },
+    { id: 6, sidebar_name: "My Creator Profile", route: "/dashboard/creator-profile", icon: FiUser },
 ];
 
 const LeftSidebar = () => {
@@ -34,7 +34,7 @@ const LeftSidebar = () => {
                     setMenuItems(currentRole === "CREATOR"
                         ? [
                             { id: 5, sidebar_name: "Creator Invitations", route: "/dashboard/creator-invitations", icon: FiMail },
-                            { id: 6, sidebar_name: "My Creator Profile", route: "/dashboard/creator-profile", icon: FiUserCircle },
+                            { id: 6, sidebar_name: "My Creator Profile", route: "/dashboard/creator-profile", icon: FiUser },
                         ]
                         : currentRole === "BRAND" ? defaultMenu.filter((item) => item.id !== 5 && item.id !== 6) : []);
                 }
