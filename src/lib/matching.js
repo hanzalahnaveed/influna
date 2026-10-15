@@ -182,7 +182,7 @@ export function scoreCreatorForCampaign(campaign, creator) {
                     : "Recorded engagement rate is below the requested minimum.",
             });
         } else {
-            missingData.push("Engagement-rate fit cannot be assessed because recent metrics are unavailable.");
+            addFactor({ key: "engagement_rate", label: "Engagement rate", weight: 10, value: null, unavailable: "Engagement-rate fit cannot be assessed because recent metrics are unavailable." });
         }
     }
 
@@ -197,8 +197,12 @@ export function scoreCreatorForCampaign(campaign, creator) {
                     key: "audience_age", label: "Audience age", weight: 10, value: bestShare / 100,
                     reason: bestShare > 0 ? "Recorded audience age data includes the requested age segment." : "Recorded audience age data does not include the requested age segment.",
                 });
-            } else missingData.push("Audience age breakdown is not in a recognized format.");
-        } else missingData.push("Audience age fit cannot be assessed because audience insights are unavailable.");
+            } else {
+                addFactor({ key: "audience_age", label: "Audience age", weight: 10, value: null, unavailable: "Audience age breakdown is not in a recognized format." });
+            }
+        } else {
+            addFactor({ key: "audience_age", label: "Audience age", weight: 10, value: null, unavailable: "Audience age fit cannot be assessed because audience insights are unavailable." });
+        }
     }
 
     const wantedGender = String(target.campaign_gender ?? "").trim();
@@ -212,8 +216,12 @@ export function scoreCreatorForCampaign(campaign, creator) {
                     key: "audience_gender", label: "Audience gender", weight: 10, value: bestShare / 100,
                     reason: bestShare > 0 ? "Recorded audience data includes the requested gender segment." : "Recorded audience data does not include the requested gender segment.",
                 });
-            } else missingData.push("Audience gender breakdown is not in a recognized format.");
-        } else missingData.push("Audience gender fit cannot be assessed because audience insights are unavailable.");
+            } else {
+                addFactor({ key: "audience_gender", label: "Audience gender", weight: 10, value: null, unavailable: "Audience gender breakdown is not in a recognized format." });
+            }
+        } else {
+            addFactor({ key: "audience_gender", label: "Audience gender", weight: 10, value: null, unavailable: "Audience gender fit cannot be assessed because audience insights are unavailable." });
+        }
     }
 
     const wantedAudienceCountry = String(target.audience_country ?? target.target_audience_country ?? "").trim();
@@ -227,8 +235,12 @@ export function scoreCreatorForCampaign(campaign, creator) {
                     key: "audience_geography", label: "Audience geography", weight: 15, value: bestShare / 100,
                     reason: bestShare >= 25 ? "Recorded audience geography shows a meaningful share in the target market." : "Recorded audience geography shows limited share in the target market.",
                 });
-            } else missingData.push("Audience geography breakdown is not in a recognized format.");
-        } else missingData.push("Audience geography fit cannot be assessed because audience insights are unavailable.");
+            } else {
+                addFactor({ key: "audience_geography", label: "Audience geography", weight: 15, value: null, unavailable: "Audience geography breakdown is not in a recognized format." });
+            }
+        } else {
+            addFactor({ key: "audience_geography", label: "Audience geography", weight: 15, value: null, unavailable: "Audience geography fit cannot be assessed because audience insights are unavailable." });
+        }
     }
 
     if (accounts.some((account) => account.latestSnapshot?.dataSource === "creator_provided")) {
