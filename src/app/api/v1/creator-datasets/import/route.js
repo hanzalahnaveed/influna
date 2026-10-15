@@ -104,6 +104,13 @@ export async function POST(request) {
             const observedAt = row.observed_at ? new Date(row.observed_at) : new Date();
             if (Number.isNaN(observedAt.getTime())) throw new Error("observed_at must be a valid date.");
             const metricsPresent = [followers, following, posts, views, likes, comments, engagement].some((value) => value !== null);
+            const isSyntheticDataset = row.dataset_synthetic?.toLowerCase() === "true";
+            const metricSource = isSyntheticDataset ? "synthetic_dataset" : "public_dataset";
+            const datasetMetadata = Object.fromEntries(
+                ["dataset_profile_id", "dataset_archetype", "dataset_is_fraud", "dataset_fraud_severity", "dataset_case_type", "dataset_audience_real_ratio", "dataset_growth_spike_score", "dataset_audience_geo_mismatch", "dataset_account_age_months", "dataset_comment_authenticity", "dataset_profile_pic_flag", "dataset_synthetic"]
+                    .filter((key) => row[key] !== undefined && row[key] !== "")
+                    .map((key) => [key, row[key]])
+            );
 
             await prisma.creatorProfile.create({
                 data: {
@@ -119,7 +126,7 @@ export async function POST(request) {
                             platform,
                             handle,
                             profileUrl,
-                            dataSource: "public_dataset",
+                            dataSource: metricSource,
                             ...(metricsPresent ? { snapshots: { create: {
                                 dataSource: "public_dataset",
                                 observedAt,
@@ -132,6 +139,7 @@ export async function POST(request) {
                                 engagementRate: engagement,
                                 rawMetrics: {
                                     source_reference: sourceReference || row.source_reference || row.source || "Not provided",
+                                    ...datasetMetadata,
                                     source_file: file.name,
                                     import_line: line,
                                     imported_by_user_id: auth.user.id,
