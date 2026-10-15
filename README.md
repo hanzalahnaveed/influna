@@ -64,6 +64,8 @@ For production, configure `DATABASE_URL`, run `npm run db:generate` during the b
 | `POST` | `/api/v1/creators/:id/social-accounts/:socialAccountId/verification` | Submit or resubmit a creator-owned social account for verification review |
 | `GET` | `/api/v1/admin/verification-requests` | List pending verification requests (ADMIN only) |
 | `GET` | `/api/v1/admin/integrations/status` | Report integration configuration readiness without exposing secrets (ADMIN only) |
+| `GET` | `/api/v1/notifications` | List the signed-in user’s notifications and unread count |
+| `PATCH` | `/api/v1/notifications` | Mark one notification or all notifications as read |
 | `PATCH` | `/api/v1/admin/social-accounts/:id/verification` | Approve or reject a pending request with an audit timestamp and reviewer identity (ADMIN only) |
 
 Brand-only campaign endpoints and creator-only profile/invitation endpoints require an active session. Campaign reads and writes are scoped to the signed-in brand owner; creator profile updates, metric snapshots, invitations, and content submissions are scoped to the signed-in creator. New creator profiles start private. Existing records without an owner remain in the database but are not visible through owner-scoped campaign endpoints. Passwords are hashed with Node.js scrypt; sessions use random opaque tokens stored as SHA-256 digests and an HTTP-only, SameSite=Strict cookie.
@@ -88,3 +90,8 @@ Email verification, password reset, rate limiting/abuse controls, CSRF tokens fo
 Brands can send an offer with a fee, currency, payment terms, and note to a linked creator. Creators can accept or reject an offer, or submit a counteroffer. Brands can accept a counteroffer or send a revised offer. Accepted terms are stored as an agreed fee and cannot be silently overwritten by a new offer. Payment records support planned, processing, paid, and cancelled statuses, due dates, references, and notes. Multiple installments are supported, the payment currency must match the agreed fee currency, and non-cancelled payment records cannot exceed the agreed fee. Paid and cancelled payment records are terminal.
 
 The dashboard is available at `/dashboard/commercials` for brand and creator accounts. These are **manual commercial and ledger records**, not a payment processor: no money is charged or transferred, and marking a record paid is an explicit manual action after an external payment has been confirmed. Payment provider integration, invoices/tax workflows, dispute handling, and notification delivery remain future work.
+
+
+## In-app notifications
+
+The notifications inbox is available at `/dashboard/notifications`. It stores user-scoped notifications in the database and supports unread counts, marking individual items read, and marking all items read. Notifications are generated for creator campaign applications, invitations and responses, commercial offers/counteroffers, and deliverable submissions/reviews. Notification creation is best-effort: a notification insert failure is logged but does not undo the campaign action. These are in-app notifications only; email, push delivery, and real-time updates are not included in this milestone.
