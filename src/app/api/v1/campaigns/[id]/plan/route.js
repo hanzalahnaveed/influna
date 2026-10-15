@@ -57,7 +57,7 @@ export async function GET(_request, context) {
         return NextResponse.json({
             campaign_id: campaignId, budget: campaignBudget(campaign),
             creators: links.map(link => ({
-                campaign_creator_id: link.id, creator_id: link.creator.id, display_name: link.creator.displayName, status: link.status,
+                campaign_creator_id: link.id, creator_id: link.creator.id, display_name: link.creator.displayName,
                 location: [link.creator.city, link.creator.country].filter(Boolean).join(", "),
                 status: link.status, match_score: link.matchScore,
                 rate_cards: link.creator.rateCards.map(rate => ({
