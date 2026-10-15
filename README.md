@@ -99,3 +99,15 @@ The dashboard is available at `/dashboard/commercials` for brand and creator acc
 ## In-app notifications
 
 The notifications inbox is available at `/dashboard/notifications`. It stores user-scoped notifications in the database and supports unread counts, marking individual items read, and marking all items read. Notifications are generated for creator campaign applications, invitations and responses, commercial offers/counteroffers, and deliverable submissions/reviews. Notification creation is best-effort: a notification insert failure is logged but does not undo the campaign action. These are in-app notifications only; email, push delivery, and real-time updates are not included in this milestone.
+
+
+## Campaign performance tracking
+
+Brands can open `/dashboard/performance` to record time-stamped performance snapshots for eligible creator collaborations. Supported metrics include impressions, reach, likes, comments, shares, saves, clicks, conversions, and attributed revenue. Each record may include a platform, published-content URL, publish date, currency, and notes.
+
+- `GET /api/v1/campaigns/:id/performance` returns the campaign's creator collaborations, performance snapshot history, and summary metrics. Access is limited to the owning brand.
+- `POST /api/v1/campaigns/:id/performance` records a snapshot for a collaboration owned by the authenticated brand. Performance entry is available after the creator accepts.
+- Snapshots are marked `MANUAL` until authorized social-platform integrations can provide verified data. Snapshot totals may repeat the same content across reporting periods and must not be interpreted as unique reach or verified ROI.
+- The `CampaignPerformanceSnapshot` table stores source, capture time, metrics, optional attributed revenue, and the user who recorded the snapshot.
+
+The schema change is delivered in `20261016170000_campaign_performance_tracking`. Run the usual Prisma migration and client-generation commands locally after pulling this milestone.
