@@ -243,11 +243,18 @@ export function scoreCreatorForCampaign(campaign, creator) {
         }
     }
 
-    if (accounts.some((account) => account.latestSnapshot?.dataSource === "creator_provided")) {
+    const metricSources = accounts.map((account) => account.latestSnapshot?.dataSource).filter(Boolean);
+    if (metricSources.includes("creator_provided")) {
         reasons.push("Some account metrics are creator-provided and have not been independently verified.");
     }
-    if (accounts.some((account) => account.latestSnapshot?.dataSource && account.latestSnapshot.dataSource !== "creator_provided")) {
-        reasons.push("At least one account has a recorded metric source other than creator-provided data; verification status should still be checked separately.");
+    if (metricSources.includes("synthetic_dataset")) {
+        reasons.push("Synthetic benchmark metrics are included; these fictional records are for development and evaluation, not real creator assessment.");
+    }
+    if (metricSources.includes("public_dataset")) {
+        reasons.push("Public-dataset reference metrics are included and have not been independently verified as live platform data.");
+    }
+    if (metricSources.some((source) => !["creator_provided", "synthetic_dataset", "public_dataset"].includes(source))) {
+        reasons.push("At least one metric has another recorded source; review its provenance and verification status.");
     }
     if (accounts.some((account) => account.verificationStatus !== "VERIFIED" && !account.verifiedAt)) {
         missingData.push("Some social accounts are not verified.");
