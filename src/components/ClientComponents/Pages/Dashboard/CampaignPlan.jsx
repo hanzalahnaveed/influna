@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FiPlus, FiRefreshCw, FiSave, FiTrash2, FiUsers } from "react-icons/fi";
+import { FiClipboard, FiPlus, FiRefreshCw, FiSave, FiSend, FiTrash2, FiUsers } from "react-icons/fi";
 
 const inputClass = "w-full rounded-lg border border-[#D9DEE7] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#FA8500]";
 const primary = "inline-flex items-center justify-center gap-2 rounded-lg bg-[#FA8500] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#e87900] disabled:opacity-50";
@@ -17,7 +17,7 @@ export default function CampaignPlanPage() {
     const [draft, setDraft] = useState(emptyDraft);
     const [budget, setBudget] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
+    const [saving, setSaving] = useState(false);\n    const [busyCreatorId, setBusyCreatorId] = useState("");
     const [error, setError] = useState("");
     const [notice, setNotice] = useState("");
 
@@ -61,6 +61,36 @@ export default function CampaignPlanPage() {
     const budgetSpend = totals[budgetCurrency] || 0;
     const remaining = budget ? budget.amount - budgetSpend : null;
     const selectedCampaign = campaigns.find(item => item.id === campaignId);
+    const plannedCreators = creators.filter(creator => items.some(item => item.creator_id === creator.creator_id));
+
+    async function invitePlannedCreator(creator) {
+        if (!(await savePlan())) return;
+        setBusyCreatorId(creator.creator_id); setError(""); setNotice("");
+        try {
+            const response = await fetch(`/api/v1/campaigns/${encodeURIComponent(campaignId)}/creators/${encodeURIComponent(creator.campaign_creator_id)}`, {
+                method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "invite" }),
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data?.error || "Could not record invitation.");
+            setNotice(`Invitation recorded for ${creator.display_name}. The creator's planned deliverables and rate estimates remain in the campaign plan.`);
+            await loadPlan();
+        } catch (err) { setError(err.message || "Could not record invitation."); }
+        finally { setBusyCreatorId(""); }
+    }
+
+    async function createPlannedDeliverables(creator) {
+        if (!(await savePlan())) return;
+        setBusyCreatorId(creator.creator_id); setError(""); setNotice("");
+        try {
+            const response = await fetch(`/api/v1/campaigns/${encodeURIComponent(campaignId)}/plan/deliverables`, {
+                method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ creator_id: creator.creator_id }),
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data?.error || "Could not create deliverables.");
+            setNotice(data.created_count ? `Created ${data.created_count} deliverable requirement(s) for ${creator.display_name}. Existing requirements were not duplicated.` : `No new deliverables were needed for ${creator.display_name}; the plan was already transferred.`);
+        } catch (err) { setError(err.message || "Could not create deliverables."); }
+        finally { setBusyCreatorId(""); }
+    }
 
     function updateItem(index, key, value) { setItems(current => current.map((item, i) => i === index ? { ...item, [key]: value, ...(key === "creator_id" ? { rate_card_id: "" } : {}) } : item)); }
     function addItem() {
@@ -126,6 +156,26 @@ export default function CampaignPlanPage() {
                 const rateChanged = rate && (Number(rate.price) !== Number(unitPrice) || rate.currency !== currency);
                 return <article key={item.creator_id + ":" + item.rate_card_id} className="rounded-xl border border-[#E3E7ED] bg-white p-4"><div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_120px_auto] sm:items-center"><div><p className="font-semibold">{creator?.display_name || "Creator"}</p><p className="mt-1 text-sm text-[#6B7280]">{item.platform || rate?.platform || "Platform"} · {item.deliverable_type || rate?.deliverable_type || "Deliverable"} · {money(unitPrice, currency)} per item</p>{rateChanged && <p className="mt-1 text-xs text-amber-700">Current rate changed to {money(rate.price, rate.currency)}; this plan keeps its saved estimate.</p>}</div><label className="text-xs font-medium text-[#495057]">Quantity<input className={inputClass + " mt-1"} type="number" min="1" max="100" value={item.quantity} onChange={event => updateItem(index, "quantity", event.target.value)} /></label><div className="flex items-center justify-between gap-3"><p className="font-bold">{money(subtotal, currency)}</p><button type="button" className={secondary + " text-red-700"} onClick={() => removeItem(index)} aria-label="Remove planned deliverable"><FiTrash2 size={14} /> Remove</button></div></div><label className="mt-3 block text-xs font-medium text-[#495057]">Planning note (optional)<input className={inputClass + " mt-1"} maxLength="1000" value={item.notes} onChange={event => updateItem(index, "notes", event.target.value)} placeholder="e.g. prioritize product launch week" /></label></article>;
             })}
+        </section>
+        <section className="rounded-xl border border-[#E3E7ED] bg-white p-5">
+            <div className="mb-3"><h2 className="text-lg font-semibold">Move planned creators into collaboration</h2><p className="mt-1 text-sm text-[#6B7280]">Save the plan before inviting. Once a creator accepts, convert planned lines into deliverable requirements without re-entering them.</p></div>
+            {!plannedCreators.length ? <p className="rounded-lg bg-[#F8F9FA] p-4 text-sm text-[#6B7280]">Add at least one planned deliverable to see collaboration actions.</p> : <div className="flex flex-col gap-3">
+                {plannedCreators.map(creator => {
+                    const creatorItems = items.filter(item => item.creator_id === creator.creator_id);
+                    const isBusy = busyCreatorId === creator.creator_id || saving;
+                    return <div key={creator.creator_id} className="flex flex-col gap-3 rounded-lg border border-[#E3E7ED] p-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div><p className="font-semibold">{creator.display_name}</p><p className="mt-1 text-xs text-[#6B7280]">{creatorItems.length} planned line(s) · Workflow status: <span className="font-semibold text-[#495057]">{creator.status}</span></p><p className="mt-1 text-xs text-[#6B7280]">Estimated rates remain separate from negotiated collaboration fees.</p></div>
+                        <div className="flex flex-wrap gap-2">
+                            {creator.status === "Suggested" && <button type="button" className={primary} disabled={isBusy} onClick={() => invitePlannedCreator(creator)}><FiSend size={14} /> {isBusy ? "Working..." : "Save & record invite"}</button>}
+                            {creator.status === "Accepted" && <button type="button" className={secondary} disabled={isBusy} onClick={() => createPlannedDeliverables(creator)}><FiClipboard size={14} /> {isBusy ? "Working..." : "Create deliverables"}</button>}
+                            {creator.status === "Invited" && <span className="self-center text-xs text-amber-700">Awaiting creator response</span>}
+                            {creator.status === "Applied" && <span className="self-center text-xs text-amber-700">Review the application in Creator Workflow</span>}
+                            {["Declined", "Cancelled", "Completed"].includes(creator.status) && <span className="self-center text-xs text-[#6B7280]">No further plan action for this status</span>}
+                        </div>
+                    </div>;
+                })}
+            </div>}
+            <p className="mt-3 text-xs leading-5 text-[#6B7280]">Invitations are recorded in Influna; no email or social message is sent. Deliverable creation is available only after acceptance and is safe to retry without creating duplicates. It creates requirements, not posts or payments.</p>
         </section>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><p className="text-xs text-[#6B7280]">Estimates snapshot the selected public rate when saved. If a creator changes their rate later, refresh the plan to review differences.</p><button type="button" className={primary} onClick={savePlan} disabled={!campaignId || saving || loading}><FiSave size={15} /> {saving ? "Saving plan..." : "Save campaign plan"}</button></div>
     </main>;
