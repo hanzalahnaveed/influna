@@ -128,7 +128,7 @@ export async function POST(request) {
                             profileUrl,
                             dataSource: metricSource,
                             ...(metricsPresent ? { snapshots: { create: {
-                                dataSource: "public_dataset",
+                                dataSource: metricSource,
                                 observedAt,
                                 followerCount: followers,
                                 followingCount: following,
