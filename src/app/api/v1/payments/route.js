@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { createNotification } from "@/lib/notifications";
 
 const currencies = new Set(["USD", "PKR", "GBP", "EUR", "AED", "SAR", "INR", "CAD", "AUD"]);
 const statuses = new Set(["PLANNED", "PROCESSING", "PAID", "CANCELLED"]);
@@ -66,7 +67,7 @@ export async function POST(request) {
     try {
         const link = await prisma.campaignCreator.findFirst({
             where: { id: campaignCreatorId, campaign: { ownerUserId: user.id } },
-            select: { id: true, status: true, proposalStatus: true, agreedFee: true, feeCurrency: true },
+            select: { id: true, status: true, proposalStatus: true, agreedFee: true, feeCurrency: true, creator: { select: { ownerUserId: true } }, campaign: { select: { campaignDetails: true } } },
         });
         if (!link) return jsonError("Collaboration not found.", 404);
         if (link.proposalStatus !== "AGREED" || link.agreedFee === null) return jsonError("Agree the collaboration fee before creating payment records.", 409);
@@ -85,7 +86,14 @@ export async function POST(request) {
         }
         const record = await prisma.campaignPaymentRecord.create({
             data: { campaignCreatorId: link.id, amount, currency, dueAt, note: body.note?.trim() || null, reference: body.reference?.trim() || null, createdByUserId: user.id },
-            include: { campaignCreator: { include: { campaign: { select: { campaignDetails: true } }, creator: { select: { displayName: true } } } } },
+            include: { campaignCreator: { include: { campaign: { select: { campaignDetails: true } }, creator: { select: { displayName: true, ownerUserId: true } } } } },
+        });
+        await createNotification({
+            userId: record.campaignCreator.creator.ownerUserId,
+            type: "PAYMENT_PLANNED",
+            title: "Payment record created",
+            message: `A ${currency} ${amount.toFixed(2)} payment record was created for ${record.campaignCreator.campaign.campaignDetails?.campaign_title || "your campaign collaboration"}.`,
+            href: "/dashboard/commercials",
         });
         return NextResponse.json(serialize(record), { status: 201 });
     } catch (error) {
