@@ -14,7 +14,6 @@ const defaultMenu = [
     { id: 2, sidebar_name: "Campaign", route: "/dashboard/campaign", icon: MdOutlineCampaign },
     { id: 3, sidebar_name: "Creators", route: "/dashboard/creators", icon: FiUsers },
     { id: 17, sidebar_name: "Creator Data Import", route: "/dashboard/creator-data", icon: FiDatabase },
-    { id: 18, sidebar_name: "Creator Rate Card", route: "/dashboard/rate-card", icon: FiDollarSign },
     { id: 15, sidebar_name: "Saved Creators", route: "/dashboard/saved-creators", icon: FiUsers },
     { id: 4, sidebar_name: "Creator Workflow", route: "/dashboard/campaign-workflow", icon: FiGitPullRequest },
     { id: 5, sidebar_name: "Creator Invitations", route: "/dashboard/creator-invitations", icon: FiMail },
