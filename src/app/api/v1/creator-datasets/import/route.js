@@ -4,7 +4,8 @@ import { requireRole } from "@/lib/auth";
 
 const MAX_BYTES = 2 * 1024 * 1024;
 const MAX_ROWS = 1000;
-const PLATFORMS = new Set(["Instagram", "TikTok", "YouTube", "Facebook", "Other"]);
+const PLATFORM_NAMES = { instagram: "Instagram", tiktok: "TikTok", youtube: "YouTube", facebook: "Facebook", other: "Other" };
+const PLATFORMS = new Set(Object.values(PLATFORM_NAMES));
 
 function parseCsv(text) {
     const rows = [];
@@ -79,7 +80,7 @@ export async function POST(request) {
         const line = index + 2;
         try {
             const displayName = row.display_name || row.name || row.creator_name;
-            const platform = row.platform ? row.platform[0].toUpperCase() + row.platform.slice(1).toLowerCase() : "";
+            const platform = PLATFORM_NAMES[(row.platform || "").trim().toLowerCase()] || "";
             const handle = (row.handle || row.username || "").replace(/^@/, "");
             if (!displayName) throw new Error("display_name is required.");
             if (!PLATFORMS.has(platform)) throw new Error("platform must be Instagram, TikTok, YouTube, Facebook, or Other.");
