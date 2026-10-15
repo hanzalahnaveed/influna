@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { FiPlus, FiRefreshCw, FiSave, FiTrash2, FiUser, FiGlobe, FiExternalLink } from "react-icons/fi";
+import { FiPlus, FiRefreshCw, FiSave, FiTrash2, FiUser, FiExternalLink } from "react-icons/fi";
 
 const inputClass = "mt-1 w-full rounded-lg border border-[#D9DEE7] bg-white px-3 py-2.5 text-sm outline-none transition focus:border-[#FA8500]";
 const primaryButton = "inline-flex items-center justify-center gap-2 rounded-lg bg-[#FA8500] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#e87900] disabled:cursor-not-allowed disabled:opacity-60";
