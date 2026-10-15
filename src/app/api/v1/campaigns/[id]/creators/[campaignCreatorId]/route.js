@@ -46,7 +46,7 @@ export async function PATCH(request, context) {
         return jsonError("Notes must be 2,000 characters or fewer.", 400);
     }
 
-    const isCreatorResponse = ["accept", "decline"].includes(body.action);
+    const isCreatorResponse = ["accept", "decline", "submit_content"].includes(body.action);
     const auth = await requireRole(isCreatorResponse ? "CREATOR" : "BRAND");
     if (auth.response) return auth.response;
 
