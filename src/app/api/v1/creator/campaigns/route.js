@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { createNotification } from "@/lib/notifications";
 
 function jsonError(message, status) {
     return NextResponse.json({ error: message }, { status });
@@ -9,7 +10,7 @@ function jsonError(message, status) {
 async function getOwnedCreator(userId) {
     return prisma.creatorProfile.findUnique({
         where: { ownerUserId: userId },
-        select: { id: true },
+        select: { id: true, displayName: true },
     });
 }
 
@@ -84,7 +85,7 @@ export async function POST(request) {
 
         const campaign = await prisma.campaign.findFirst({
             where: { id: body.campaign_id.trim(), status: "Active" },
-            select: { id: true },
+            select: { id: true, ownerUserId: true, campaignDetails: true },
         });
         if (!campaign) return jsonError("Campaign is not available for applications.", 404);
 
@@ -117,6 +118,14 @@ export async function POST(request) {
                     status: "Applied",
                 },
             });
+
+        await createNotification({
+            userId: campaign.ownerUserId,
+            type: "campaign_application",
+            title: "New campaign application",
+            message: (creator.displayName || "A creator") + ' applied to “' + (campaign.campaignDetails?.campaign_title || "Untitled campaign") + '”.',
+            href: "/dashboard/campaign-workflow",
+        });
 
         return NextResponse.json({
             campaign_id: application.campaignId,
