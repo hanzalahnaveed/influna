@@ -63,6 +63,7 @@ model CreatorProfile {
   updatedAt     DateTime          @updatedAt
   socialAccounts SocialAccount[]
   campaignLinks CampaignCreator[]
+  rateCards CreatorRateCard[]
   savedBy SavedCreator[]
   @@index([isPublic, createdAt])
   @@index([country, city])
@@ -284,4 +285,21 @@ model CampaignPerformanceSnapshot {
   campaignCreator     CampaignCreator @relation(fields: [campaignCreatorId], references: [id], onDelete: Cascade)
   @@index([campaignCreatorId, capturedAt])
   @@index([dataSource, capturedAt])
+}
+
+model CreatorRateCard {
+  id             String         @id @default(cuid())
+  creatorId      String
+  platform       String
+  deliverableType String
+  price          Decimal        @db.Decimal(12, 2)
+  currency       String         @default("USD")
+  notes          String?
+  isPublic       Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  creator        CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  @@unique([creatorId, platform, deliverableType])
+  @@index([creatorId, isPublic])
+  @@index([platform, currency, price])
 }
