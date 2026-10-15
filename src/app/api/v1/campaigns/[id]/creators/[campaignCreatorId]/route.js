@@ -66,6 +66,14 @@ export async function PATCH(request, context) {
             select: { id: true, status: true },
         });
         if (!link) return jsonError("Campaign creator record not found.", 404);
+        if (["submit_content", "request_changes", "approve_content"].includes(body.action)) {
+            const deliverableCount = await prisma.campaignDeliverable.count({
+                where: { campaignCreatorId: link.id },
+            });
+            if (deliverableCount > 0) {
+                return jsonError("This collaboration uses deliverable-level review. Manage submissions in the Deliverables & revisions workflow.", 409);
+            }
+        }
         if (!transition.from.includes(link.status)) {
             return jsonError(`Cannot perform "${body.action}" while status is "${link.status}".`, 409);
         }
