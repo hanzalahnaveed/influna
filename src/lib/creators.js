@@ -20,7 +20,7 @@ export const creatorInputSchema = z.object({
 export const creatorPatchSchema = creatorInputSchema.omit({ social_accounts: true }).partial();
 
 export const metricSnapshotSchema = z.object({
-    data_source: z.enum(["creator_provided", "meta_api", "platform_api", "manual_review"]),
+    data_source: z.literal("creator_provided"),
     observed_at: z.string().datetime().optional(),
     follower_count: z.number().int().nonnegative().optional().nullable(),
     following_count: z.number().int().nonnegative().optional().nullable(),
