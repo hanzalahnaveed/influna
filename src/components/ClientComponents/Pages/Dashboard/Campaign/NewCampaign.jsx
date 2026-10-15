@@ -90,6 +90,9 @@ const NewCampaign = () => {
                     campaign_age_range: finalValues.campaign_age_range,
                     campaign_gender: finalValues.campaign_gender,
                     campaign_interest: finalValues.campaign_interest,
+                    ...(finalValues.min_followers !== undefined && finalValues.min_followers !== '' ? { min_followers: Number(finalValues.min_followers) } : {}),
+                    ...(finalValues.max_followers !== undefined && finalValues.max_followers !== '' ? { max_followers: Number(finalValues.max_followers) } : {}),
+                    ...(finalValues.min_engagement_rate !== undefined && finalValues.min_engagement_rate !== '' ? { min_engagement_rate: Number(finalValues.min_engagement_rate) } : {}),
                 },
                 platform_details: {
                     campaign_platform: finalValues.campaign_platform,
