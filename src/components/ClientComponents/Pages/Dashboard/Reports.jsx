@@ -12,6 +12,10 @@ function number(value) {
 function dateLabel(value) {
     return value ? new Date(value).toLocaleDateString() : "—";
 }
+function currencyTotalsLabel(items) {
+    if (!items?.length) return "—";
+    return items.map((item) => new Intl.NumberFormat("en", { style: "currency", currency: item.currency, maximumFractionDigits: 2 }).format(item.amount)).join(" · ");
+}
 function Metric({ label, value, hint, icon: Icon, warning = false }) {
     return <article className="rounded-xl border border-[#E3E7ED] bg-white p-4 shadow-sm">
         <div className="flex items-start justify-between gap-3"><p className="text-sm text-[#6B7280]">{label}</p><span className={"rounded-lg p-2 " + (warning ? "bg-amber-50 text-amber-700" : "bg-orange-50 text-[#FA8500]")}><Icon size={18} /></span></div>
@@ -82,6 +86,14 @@ export default function CampaignReportsPage() {
                             <div className="rounded-lg bg-slate-50 p-3"><p className="text-xs text-[#6B7280]">Creator acceptance</p><p className="mt-1 text-xl font-bold">{campaign.acceptance_rate === null ? "—" : campaign.acceptance_rate + "%"}</p></div>
                             <div className="rounded-lg bg-slate-50 p-3"><p className="text-xs text-[#6B7280]">Average profile fit</p><p className="mt-1 text-xl font-bold">{campaign.creators.average_match_score === null ? "—" : campaign.creators.average_match_score + "%"}</p></div>
                             <div className="rounded-lg bg-slate-50 p-3"><p className="text-xs text-[#6B7280]">On-time approvals</p><p className="mt-1 text-xl font-bold">{campaign.deliverables.on_time_approval_rate === null ? "—" : campaign.deliverables.on_time_approval_rate + "%"}</p></div>
+                        </div>
+                        <div className="mt-4 rounded-lg border border-[#E3E7ED] p-3">
+                            <div className="mb-3 flex items-center justify-between gap-2"><h4 className="text-sm font-semibold">Commercial summary</h4><Link href="/dashboard/commercials" className="text-xs font-semibold text-[#B85F00] hover:underline">Manage terms & payments →</Link></div>
+                            <div className="grid gap-3 sm:grid-cols-3">
+                                <div className="rounded-lg bg-slate-50 p-3"><p className="text-xs text-[#6B7280]">Agreed creator fees</p><p className="mt-1 text-sm font-semibold">{currencyTotalsLabel(campaign.commercials.agreed_creator_fees)}</p><p className="mt-1 text-xs text-[#6B7280]">{campaign.commercials.agreed_collaborations} agreed collaborations</p></div>
+                                <div className="rounded-lg bg-amber-50 p-3"><p className="text-xs text-[#6B7280]">Planned / processing</p><p className="mt-1 text-sm font-semibold">{currencyTotalsLabel(campaign.commercials.planned_or_processing)}</p></div>
+                                <div className="rounded-lg bg-emerald-50 p-3"><p className="text-xs text-[#6B7280]">Marked paid manually</p><p className="mt-1 text-sm font-semibold">{currencyTotalsLabel(campaign.commercials.marked_paid)}</p><p className="mt-1 text-xs text-[#6B7280]">{campaign.commercials.payment_record_count} payment records</p></div>
+                            </div>
                         </div>
                         {campaign.deliverables.total > 0 ? <div className="mt-4"><div className="mb-1 flex items-center justify-between text-xs"><span className="font-medium text-[#495057]">Deliverable approval progress</span><span className="font-semibold">{campaign.deliverables.completion_rate}%</span></div><div className="h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-[#FA8500] transition-all" style={{ width: campaign.deliverables.completion_rate + "%" }} /></div><div className="mt-3 flex flex-wrap gap-2 text-xs"><span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">{campaign.deliverables.pending} pending</span><span className="rounded-full bg-sky-50 px-2.5 py-1 text-sky-700">{campaign.deliverables.submitted} submitted</span><span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-800">{campaign.deliverables.changes_requested} revisions</span><span className="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700">{campaign.deliverables.approved} approved</span></div></div> : <p className="mt-4 text-xs text-[#6B7280]">No deliverable requirements have been added to this campaign yet.</p>}
                     </article>)}
