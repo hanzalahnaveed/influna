@@ -12,7 +12,7 @@ export async function GET(_request, context) {
         if (!creator) return NextResponse.json({ error: "Creator not found." }, { status: 404 });
 
         const links = await prisma.campaignCreator.findMany({
-            where: { creatorId: id, status: { in: ["Invited", "Accepted", "Declined", "ContentSubmitted", "ChangesRequested", "Approved", "Completed", "Cancelled"] } },
+            where: { creatorId: id, status: { in: ["Applied", "Invited", "Accepted", "Declined", "ContentSubmitted", "ChangesRequested", "Approved", "Completed", "Cancelled"] } },
             include: { campaign: { select: { id: true, campaignDetails: true, targetingCriteria: true, platformDetails: true, status: true } } },
             orderBy: [{ invitedAt: "desc" }, { updatedAt: "desc" }],
         });
