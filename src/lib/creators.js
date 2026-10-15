@@ -32,7 +32,7 @@ export const metricSnapshotSchema = z.object({
     raw_metrics: z.record(z.string(), z.unknown()).optional(),
 }).strict();
 
-export function serializeCreator(creator) {
+export function serializeCreator(creator, { includePrivateVerificationFeedback = false } = {}) {
     return {
         id: creator.id,
         display_name: creator.displayName,
@@ -64,7 +64,7 @@ export function serializeCreator(creator) {
                             : account.connectedAt ? "connected_unverified" : "unverified",
                 verification_requested_at: account.verificationRequestedAt?.toISOString() ?? null,
                 verification_reviewed_at: account.verificationReviewedAt?.toISOString() ?? null,
-                verification_review_note: account.verificationReviewNote ?? null,
+                ...(includePrivateVerificationFeedback ? { verification_review_note: account.verificationReviewNote ?? null } : {}),
                 is_verified: Boolean(account.verifiedAt) && account.verificationStatus === "VERIFIED",
                 latest_metrics: snapshot ? {
                     observed_at: snapshot.observedAt.toISOString(),
