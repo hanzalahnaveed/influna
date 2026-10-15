@@ -56,6 +56,8 @@ const NewCampaign = () => {
             const payment_information = {
                 ...paymentTerms,
                 campaign_payment_model: finalValues.campaign_payment_model,
+                ...(finalValues.campaign_budget !== undefined && finalValues.campaign_budget !== null && finalValues.campaign_budget !== "" ? { campaign_budget: Number(finalValues.campaign_budget) } : {}),
+                budget_currency: String(finalValues.budget_currency || "USD").toUpperCase(),
             };
             if (finalValues.campaign_payment_model === 'Performance Based') {
                 payment_information.performance_model = paymentTerms.performance_model;
