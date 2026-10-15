@@ -7,12 +7,13 @@ import Link from "next/link";
 import { MdOutlineSpaceDashboard, MdOutlineCampaign } from "react-icons/md";
 import { IoSettingsOutline } from "react-icons/io5";
 import { IoIosLogOut } from "react-icons/io";
-import { FiUsers, FiGitPullRequest, FiMail, FiUser, FiFileText, FiBriefcase, FiTruck, FiBarChart2, FiShield, FiDollarSign, FiBell, FiTrendingUp } from "react-icons/fi";
+import { FiUsers, FiGitPullRequest, FiMail, FiUser, FiFileText, FiBriefcase, FiTruck, FiBarChart2, FiShield, FiDollarSign, FiBell, FiTrendingUp, FiDatabase } from "react-icons/fi";
 
 const defaultMenu = [
     { id: 1, sidebar_name: "Dashboard", route: "/dashboard", icon: MdOutlineSpaceDashboard },
     { id: 2, sidebar_name: "Campaign", route: "/dashboard/campaign", icon: MdOutlineCampaign },
     { id: 3, sidebar_name: "Creators", route: "/dashboard/creators", icon: FiUsers },
+    { id: 17, sidebar_name: "Creator Data Import", route: "/dashboard/creator-data", icon: FiDatabase },
     { id: 15, sidebar_name: "Saved Creators", route: "/dashboard/saved-creators", icon: FiUsers },
     { id: 4, sidebar_name: "Creator Workflow", route: "/dashboard/campaign-workflow", icon: FiGitPullRequest },
     { id: 5, sidebar_name: "Creator Invitations", route: "/dashboard/creator-invitations", icon: FiMail },
