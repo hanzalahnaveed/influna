@@ -36,6 +36,7 @@ For production, configure `DATABASE_URL`, run `npm run db:generate` during the b
 | `PUT` | `/api/v1/campaigns/:id` | Partially update campaign sections |
 | `DELETE` | `/api/v1/campaigns/:id` | Delete a campaign |
 | `GET` | `/api/v1/dashboard` | Get campaign totals by status |
+| `GET` | `/api/v1/reports/campaigns` | Summarize owned campaign collaboration and deliverable progress |
 | `GET` | `/api/v1/creators` | List public creator profiles; optional `search` and `country` filters |
 | `POST` | `/api/v1/creators` | Create a creator profile and social-account handles |
 | `GET` | `/api/v1/creators/:id` | Get one public creator and latest recorded metrics |
@@ -64,7 +65,7 @@ Campaign JSON uses `campaign_details`, `targeting_criteria`, `platform_details`,
 
 Creator profile fields and social-account handles are supplied by the creator unless otherwise stated. Each metrics snapshot requires a `data_source` of `creator_provided`, `meta_api`, `platform_api`, or `manual_review`, and records when it was observed. These labels are provenance supplied by the caller, not proof that an API connection or verification has occurred. Do not label metrics as API-sourced unless they really came from an authorized platform integration.
 
-The matching endpoint currently uses a deterministic, explainable rule-based score for categories/interests, location, language, and requested platform. It is a preliminary fit score, **not** an AI prediction of campaign performance. Audience insights and historical metric snapshots are stored separately so future ranking can distinguish audience fit from performance fit.
+The Campaign Reports dashboard summarizes creator collaboration states, deliverable approvals, and overdue deliverables using Influna workflow records; it does not claim verified reach, engagement, sales, or ROI.\n\nThe matching endpoint currently uses a deterministic, explainable rule-based score for categories/interests, location, language, and requested platform. It is a preliminary fit score, **not** an AI prediction of campaign performance. Audience insights and historical metric snapshots are stored separately so future ranking can distinguish audience fit from performance fit.
 
 ## Important limitations
 
