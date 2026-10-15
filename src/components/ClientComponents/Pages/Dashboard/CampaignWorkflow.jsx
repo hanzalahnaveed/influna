@@ -25,6 +25,15 @@ function formatDate(value) {
     return Number.isNaN(date.getTime()) ? null : date.toLocaleString();
 }
 
+function formatMoney(amount, currency = "USD") {
+    if (amount === null || amount === undefined || amount === "") return "Not set";
+    try {
+        return new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 2 }).format(Number(amount));
+    } catch {
+        return `${currency} ${Number(amount).toFixed(2)}`;
+    }
+}
+
 export default function CampaignWorkflowPage() {
     const [campaigns, setCampaigns] = useState([]);
     const [campaignId, setCampaignId] = useState("");
@@ -161,7 +170,19 @@ export default function CampaignWorkflowPage() {
                         <FiUsers size={14} /> {generating ? "Finding creators..." : "Generate suggestions"}
                     </button>
                 </div>
-                {selectedCampaign && <p className="mt-3 text-xs text-[#6B7280]">Selected: <span className="font-medium text-[#495057]">{selectedCampaign.campaign_details?.campaign_title || "Untitled campaign"}</span></p>}
+                {selectedCampaign && (
+                    <div className="mt-4 border-t border-[#EEF0F3] pt-4">
+                        <p className="text-sm font-semibold text-[#343A40]">Campaign brief</p>
+                        <div className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                            <div className="rounded-lg bg-[#F8F9FA] p-3"><p className="text-[11px] text-[#6B7280]">Budget</p><p className="mt-1 text-sm font-semibold">{formatMoney(selectedCampaign.campaign_details?.campaign_budget, selectedCampaign.payment_information?.campaign_currency || "USD")}</p></div>
+                            <div className="rounded-lg bg-[#F8F9FA] p-3"><p className="text-[11px] text-[#6B7280]">Campaign dates</p><p className="mt-1 text-sm font-semibold">{selectedCampaign.campaign_details?.campaign_start_date || "Start not set"} – {selectedCampaign.campaign_details?.campaign_end_date || "End not set"}</p></div>
+                            <div className="rounded-lg bg-[#F8F9FA] p-3"><p className="text-[11px] text-[#6B7280]">Target region</p><p className="mt-1 text-sm font-semibold">{selectedCampaign.targeting_criteria?.campaign_location || "Not specified"}</p></div>
+                            <div className="rounded-lg bg-[#F8F9FA] p-3"><p className="text-[11px] text-[#6B7280]">Platforms</p><p className="mt-1 text-sm font-semibold">{[selectedCampaign.platform_details?.campaign_platform, selectedCampaign.platform_details?.campaign_language].filter(Boolean).join(" · ") || "Not specified"}</p></div>
+                        </div>
+                        {selectedCampaign.campaign_details?.campaign_description && <p className="mt-3 text-sm leading-5 text-[#6B7280]">{selectedCampaign.campaign_details.campaign_description}</p>}
+                        <p className="mt-2 text-xs text-[#6B7280]">Selected: <span className="font-medium text-[#495057]">{selectedCampaign.campaign_details?.campaign_title || "Untitled campaign"}</span>. Use the brief as the reference for creator selection, commercial terms, and deliverable deadlines.</p>
+                    </div>
+                )}
             </section>
 
             <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -224,6 +245,25 @@ export default function CampaignWorkflowPage() {
                                     {record.match_score !== null && record.match_score !== undefined && <span className="rounded-lg bg-[#FFF7ED] px-3 py-2 text-xs font-semibold text-[#8A4B08]">{Math.round(record.match_score)}% profile fit</span>}
                                     <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${statusStyle(record.status)}`}>{humanize(record.status)}</span>
                                 </div>
+                            </div>
+
+                            <div className="mt-4 grid gap-3 md:grid-cols-2">
+                                <section className="rounded-lg border border-[#E3E7ED] p-3">
+                                    <h4 className="text-xs font-semibold uppercase tracking-wide text-[#495057]">Commercial terms</h4>
+                                    <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                                        <div><p className="text-[#6B7280]">Agreed fee</p><p className="mt-0.5 font-semibold text-[#212529]">{formatMoney(record.commercial?.agreed_fee, record.commercial?.fee_currency)}</p></div>
+                                        <div><p className="text-[#6B7280]">Proposal status</p><p className="mt-0.5 font-semibold text-[#212529]">{humanize(record.commercial?.proposal_status || "NONE")}</p></div>
+                                    </div>
+                                    {record.commercial?.payment_terms && <p className="mt-2 text-xs leading-5 text-[#6B7280]">Payment terms: {record.commercial.payment_terms}</p>}
+                                    {record.commercial?.proposal_note && <p className="mt-2 text-xs leading-5 text-[#6B7280]">Offer note: {record.commercial.proposal_note}</p>}
+                                    {record.commercial?.counter_note && <p className="mt-1 text-xs leading-5 text-[#6B7280]">Counter note: {record.commercial.counter_note}</p>}
+                                    <a href="/dashboard/commercials" className="mt-3 inline-flex text-xs font-semibold text-[#B85E00] underline">Manage offers and payments</a>
+                                </section>
+                                <section className="rounded-lg border border-[#E3E7ED] p-3">
+                                    <div className="flex items-center justify-between gap-2"><h4 className="text-xs font-semibold uppercase tracking-wide text-[#495057]">Deliverables plan</h4><span className="text-[11px] text-[#6B7280]">{record.deliverable_count || 0} item(s)</span></div>
+                                    {(record.deliverables || []).length ? <ul className="mt-2 flex flex-col gap-2">{record.deliverables.map((item) => <li key={item.id} className="flex items-start justify-between gap-2 text-xs"><span className="font-medium text-[#343A40]">{item.title}</span><span className="shrink-0 text-right text-[#6B7280]">{humanize(item.status)}{item.due_at ? <span className="block">Due {new Date(item.due_at).toLocaleDateString()}</span> : ""}</span></li>)}</ul> : <p className="mt-2 text-xs leading-5 text-[#6B7280]">No deliverables planned yet. Add content requirements and deadlines in the Deliverables &amp; revisions workspace.</p>}
+                                    <a href="/dashboard/deliverables" className="mt-3 inline-flex text-xs font-semibold text-[#B85E00] underline">Manage deliverables</a>
+                                </section>
                             </div>
 
                             <div className="mt-4 grid gap-2 rounded-lg bg-[#F8F9FA] p-3 text-xs text-[#6B7280] sm:grid-cols-2">
