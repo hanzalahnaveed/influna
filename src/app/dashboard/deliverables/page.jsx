@@ -174,9 +174,10 @@ export default function DeliverablesPage() {
             });
             const data = await response.json();
             if (!response.ok) throw new Error(data?.error || "Could not update deliverable.");
-            setNotice("Deliverable updated: " + prettyStatus(data.status) + ".");
+            setNotice(data.collaboration_status === "Approved" ? "All deliverables approved. Collaboration marked Approved." : "Deliverable updated: " + prettyStatus(data.status) + ".");
             setDrafts((current) => ({ ...current, [item.id]: { ...current[item.id], content_url: "", creator_note: "", review_note: "" } }));
             await loadDeliverables();
+            if (isBrand) await loadLinks(user, campaignId);
         } catch (err) {
             setError(err.message || "Could not update deliverable.");
         } finally {
