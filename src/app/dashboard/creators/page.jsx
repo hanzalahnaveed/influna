@@ -23,6 +23,7 @@ export default function CreatorDiscoveryPage() {
     const [selectedCampaign, setSelectedCampaign] = useState("");
     const [loading, setLoading] = useState(true);
     const [matching, setMatching] = useState(false);
+    const [invitingId, setInvitingId] = useState("");
     const [error, setError] = useState("");
     const [notice, setNotice] = useState("");
 
@@ -100,6 +101,28 @@ export default function CreatorDiscoveryPage() {
 
     const matchIds = new Set(matches.map((match) => match.creator_id));
 
+    async function recordInvitation(match) {
+        if (!selectedCampaign || !match.campaign_creator_id || match.status !== "Suggested") return;
+        setInvitingId(match.campaign_creator_id);
+        setError("");
+        setNotice("");
+        try {
+            const response = await fetch("/api/v1/campaigns/" + encodeURIComponent(selectedCampaign) + "/creators/" + encodeURIComponent(match.campaign_creator_id), {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "invite" }),
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data?.error || "Could not record invitation.");
+            setMatches((current) => current.map((item) => item.campaign_creator_id === match.campaign_creator_id ? { ...item, status: data.status, invited_at: data.invited_at } : item));
+            setNotice("Invitation recorded for " + match.display_name + ". This records the invitation in Influna; it does not send an email or social-platform message.");
+        } catch (err) {
+            setError(err.message || "Could not record invitation.");
+        } finally {
+            setInvitingId("");
+        }
+    }
+
     return (
         <main className="flex flex-col gap-6 pb-8 text-[#212529]">
             <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
@@ -163,9 +186,18 @@ export default function CreatorDiscoveryPage() {
                                         <p className="mt-1 text-xs text-[#6B7280]">{[match.city, match.country].filter(Boolean).join(", ") || "Location not provided"} · {(match.categories || []).join(", ") || "No categories listed"}</p>
                                         <div className="mt-2 flex flex-wrap gap-2">{(match.social_accounts || []).map((account) => <span key={account.id} className="rounded-full bg-[#F3F4F6] px-2.5 py-1 text-xs text-[#495057]">{account.platform} · @{account.handle}</span>)}</div>
                                     </div>
-                                    <div className="min-w-24 rounded-lg bg-[#FFF7ED] px-3 py-2 text-center">
-                                        <div className="text-xl font-bold text-[#C66A00]">{match.match_score}%</div>
-                                        <div className="text-[10px] font-semibold uppercase tracking-wide text-[#8A4B08]">Profile fit</div>
+                                    <div className="flex shrink-0 flex-col items-stretch gap-2 sm:items-end">
+                                        <div className="min-w-24 rounded-lg bg-[#FFF7ED] px-3 py-2 text-center">
+                                            <div className="text-xl font-bold text-[#C66A00]">{match.match_score}%</div>
+                                            <div className="text-[10px] font-semibold uppercase tracking-wide text-[#8A4B08]">Profile fit</div>
+                                        </div>
+                                        {match.status === "Suggested" ? (
+                                            <button className={primaryButton} type="button" disabled={invitingId === match.campaign_creator_id} onClick={() => recordInvitation(match)}>
+                                                {invitingId === match.campaign_creator_id ? "Recording..." : "Record invite"}
+                                            </button>
+                                        ) : (
+                                            <span className="rounded-full bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700">{match.status || "Already shortlisted"}</span>
+                                        )}
                                     </div>
                                 </div>
                                 {match.match_reasons?.length > 0 && <ul className="mt-3 list-inside list-disc space-y-1 text-xs text-[#495057]">{match.match_reasons.map((reason, index) => <li key={index}>{reason}</li>)}</ul>}
