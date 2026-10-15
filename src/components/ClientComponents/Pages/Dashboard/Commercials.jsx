@@ -166,7 +166,8 @@ export default function CommercialsPage() {
                             <div className="rounded-lg bg-slate-50 p-3"><p className="text-xs text-[#6B7280]">Agreed fee</p><p className="mt-1 font-semibold">{money(item.agreed_fee, item.currency)}</p></div>
                         </div>
                         {item.payment_terms && <p className="mt-3 text-sm"><span className="font-medium">Payment terms:</span> {item.payment_terms}</p>}
-                        {item.proposal_note && <p className="mt-1 text-sm text-[#6B7280]"><span className="font-medium">Note:</span> {item.proposal_note}</p>}
+                        {item.proposal_note && <p className="mt-1 text-sm text-[#6B7280]"><span className="font-medium">Offer note:</span> {item.proposal_note}</p>}
+                        {item.counter_note && <p className="mt-1 text-sm text-[#6B7280]"><span className="font-medium">Counteroffer note:</span> {item.counter_note}</p>}
 
                         {isBrand && !agreed && <div className="mt-4 rounded-lg border border-[#E3E7ED] p-3">
                             <h4 className="mb-3 text-sm font-semibold">{pendingCounter ? "Review counteroffer or send a revised offer" : "Send or revise offer"}</h4>
