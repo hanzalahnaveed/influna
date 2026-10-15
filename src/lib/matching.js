@@ -263,7 +263,72 @@ export function scoreCreatorForCampaign(campaign, creator) {
     if (!creator.categories?.length) missingData.push("Creator categories are not provided.");
 
     const score = evaluatedWeight ? Math.round((weightedScore / evaluatedWeight) * 100) : 0;
-    const confidence = potentialWeight ? Math.round((evaluatedWeight / potentialWeight) * 100) : 0;
+    const criteriaCoverage = potentialWeight ? (evaluatedWeight / potentialWeight) : 0;
+
+    // Data quality affects confidence, never the underlying profile-fit score.
+    // Missing profile fields reduce confidence modestly rather than counting as mismatches.
+    const completenessChecks = [
+        Boolean(creator.bio?.trim()),
+        Boolean(creator.categories?.length),
+        Boolean(creator.country?.trim() || creator.city?.trim()),
+        Boolean(creator.languages?.length),
+        accounts.length > 0,
+        accounts.some((account) => Boolean(account.profileUrl)),
+    ];
+    const completenessRatio = completenessChecks.filter(Boolean).length / completenessChecks.length;
+    let qualityMultiplier = 0.75 + (0.25 * completenessRatio);
+
+    const metricDependentKeys = new Set(["follower_range", "engagement_rate", "audience_age", "audience_gender", "audience_geography"]);
+    const usesMetrics = factors.some((factor) => metricDependentKeys.has(factor.key));
+    const latestObservedAt = accounts
+        .map((account) => account.latestSnapshot?.observedAt)
+        .filter(Boolean)
+        .map((value) => new Date(value))
+        .filter((date) => !Number.isNaN(date.getTime()))
+        .sort((a, b) => b.getTime() - a.getTime())[0] ?? null;
+    const metricAgeDays = latestObservedAt
+        ? Math.max(0, (Date.now() - latestObservedAt.getTime()) / 86400000)
+        : null;
+    const metricsFreshness = !latestObservedAt
+        ? "no_metrics"
+        : metricAgeDays <= 30
+            ? "recent"
+            : metricAgeDays <= 90
+                ? "aging"
+                : "stale";
+
+    if (usesMetrics) {
+        if (metricsFreshness === "aging") qualityMultiplier *= 0.9;
+        if (metricsFreshness === "stale") qualityMultiplier *= 0.75;
+        if (metricsFreshness === "no_metrics") qualityMultiplier *= 0.8;
+
+        const metricAccounts = accounts.filter((account) => account.latestSnapshot);
+        if (metricAccounts.length) {
+            const verifiedRatio = metricAccounts.filter((account) =>
+                Boolean(account.verifiedAt) || account.verificationStatus === "VERIFIED"
+            ).length / metricAccounts.length;
+            qualityMultiplier *= 0.85 + (0.15 * verifiedRatio);
+        } else {
+            qualityMultiplier *= 0.85;
+        }
+    }
+
+    const creatorSource = creator.ownerUserId
+        ? "creator_submitted"
+        : accounts.some((account) => account.latestSnapshot?.dataSource === "synthetic_dataset" || account.dataSource === "synthetic_dataset")
+            ? "synthetic_dataset"
+            : accounts.some((account) => account.latestSnapshot?.dataSource === "public_dataset" || account.dataSource === "public_dataset")
+                ? "public_dataset_reference"
+                : "unknown_source";
+    if (creatorSource === "synthetic_dataset") {
+        qualityMultiplier = Math.min(qualityMultiplier, 0.25);
+        reasons.push("This is a fictional synthetic benchmark profile; its confidence is capped and it should not be treated as a real creator recommendation.");
+    } else if (creatorSource === "public_dataset_reference") {
+        qualityMultiplier *= 0.8;
+        reasons.push("Public-dataset reference data lowers confidence because it is not independently verified as live platform data.");
+    }
+
+    const confidence = Math.round(criteriaCoverage * qualityMultiplier * 100);
     const recommendation = classifyScore(score, confidence);
     const campaignBudget = Number(campaign.paymentInformation?.campaign_budget);
     const hasBudget = Number.isFinite(campaignBudget) && campaignBudget > 0;
@@ -273,6 +338,10 @@ export function scoreCreatorForCampaign(campaign, creator) {
     return {
         match_score: score,
         match_confidence: confidence,
+        criteria_coverage: Math.round(criteriaCoverage * 100),
+        data_quality_confidence: Math.round(qualityMultiplier * 100),
+        metrics_freshness: metricsFreshness,
+        metrics_age_days: metricAgeDays === null ? null : Math.floor(metricAgeDays),
         recommendation_tier: recommendation.tier,
         recommendation_label: recommendation.label,
         match_reasons: reasons,
@@ -280,7 +349,7 @@ export function scoreCreatorForCampaign(campaign, creator) {
         missing_data: [...new Set(missingData)],
         score_type: "rule_based_v3",
         note: evaluatedWeight
-            ? "Explainable profile-fit score using available campaign and creator data. Confidence indicates how much of the applicable criteria could be assessed; this is not a prediction of campaign performance."
+            ? "Profile-fit score reflects criterion matches only and is not reduced for missing profile information. Confidence combines criterion coverage with data completeness, metric recency, account verification status when metrics are used, and source reliability. This is not a prediction of campaign performance."
             : "No applicable matching criteria could be assessed. Complete the campaign brief and creator data before relying on this recommendation.",
     };
 }
