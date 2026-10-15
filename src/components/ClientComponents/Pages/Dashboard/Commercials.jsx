@@ -96,7 +96,7 @@ export default function CommercialsPage() {
                 body: JSON.stringify({
                     campaign_creator_id: key,
                     amount: draft.payment_amount ?? link.commercial?.agreed_fee,
-                    currency: draft.payment_currency || link.commercial?.currency || "USD",
+                    currency: link.commercial?.currency || "USD",
                     due_at: draft.payment_due_at || null,
                     reference: draft.payment_reference || "",
                     note: draft.payment_note || "",
@@ -195,8 +195,8 @@ export default function CommercialsPage() {
                             <h4 className="text-sm font-semibold">Record a payment</h4>
                             <p className="mt-1 text-xs text-[#6B7280]">You can split the agreed fee into multiple records, such as an advance and a final payment.</p>
                             <div className="mt-3 grid gap-3 sm:grid-cols-4">
-                                <label className="text-xs font-medium text-[#495057]">Amount<input className={field + " mt-1"} type="number" min="0.01" step="0.01" value={draft.payment_amount ?? item.agreed_fee ?? ""} onChange={(e) => updateDraft(key, "payment_amount", e.target.value)} /></label>
-                                <label className="text-xs font-medium text-[#495057]">Currency<select className={field + " mt-1"} value={draft.payment_currency || item.currency || "USD"} onChange={(e) => updateDraft(key, "payment_currency", e.target.value)}>{currencies.map((currency) => <option key={currency}>{currency}</option>)}</select></label>
+                                <label className="text-xs font-medium text-[#495057]">Amount<input className={field + " mt-1"} type="number" min="0.01" step="0.01" value={draft.payment_amount ?? remainingFee} onChange={(e) => updateDraft(key, "payment_amount", e.target.value)} /></label>
+                                <label className="text-xs font-medium text-[#495057]">Currency<input className={field + " mt-1"} value={item.currency || "USD"} readOnly /></label>
                                 <label className="text-xs font-medium text-[#495057]">Due date<input className={field + " mt-1"} type="date" value={draft.payment_due_at || ""} onChange={(e) => updateDraft(key, "payment_due_at", e.target.value ? new Date(e.target.value + "T12:00:00").toISOString() : "")} /></label>
                                 <label className="text-xs font-medium text-[#495057]">Reference<input className={field + " mt-1"} value={draft.payment_reference || ""} onChange={(e) => updateDraft(key, "payment_reference", e.target.value)} placeholder="Invoice or transaction ref" /></label>
                                 <label className="text-xs font-medium text-[#495057] sm:col-span-4">Note<input className={field + " mt-1"} value={draft.payment_note || ""} onChange={(e) => updateDraft(key, "payment_note", e.target.value)} placeholder="Advance, final installment, or other context" /></label>
