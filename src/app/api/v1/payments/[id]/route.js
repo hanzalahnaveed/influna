@@ -18,7 +18,7 @@ export async function PATCH(request, context) {
     try {
         const existing = await prisma.campaignPaymentRecord.findFirst({
             where: { id, campaignCreator: { campaign: { ownerUserId: user.id } } },
-            include: { campaignCreator: { select: { id: true, status: true, campaign: { select: { campaignDetails: true } }, creator: { select: { displayName: true } } } } },
+            include: { campaignCreator: { select: { id: true, campaignId: true, status: true, campaign: { select: { campaignDetails: true } }, creator: { select: { displayName: true } } } } },
         });
         if (!existing) return jsonError("Payment record not found.", 404);
         if (["PAID", "CANCELLED"].includes(existing.status) && body.status !== existing.status) return jsonError("Paid and cancelled payment records are final and cannot be reopened.", 409);
