@@ -71,6 +71,7 @@ export async function GET() {
                     overdue: overdueDeliverables,
                     completion_rate: deliverables.length ? Math.round((approvedDeliverables / deliverables.length) * 100) : null,
                     approved_by_deadline: onTimeApproved,
+                    approved_with_deadline: deliverables.filter((item) => item.status === "Approved" && item.dueAt).length,
                     with_deadline: dueDeliverables.length,
                     on_time_approval_rate: deliverables.filter((item) => item.status === "Approved" && item.dueAt).length
                         ? Math.round((onTimeApproved / deliverables.filter((item) => item.status === "Approved" && item.dueAt).length) * 100)
@@ -93,14 +94,15 @@ export async function GET() {
             approved_deliverables: sum.approved_deliverables + report.deliverables.approved,
             overdue_deliverables: sum.overdue_deliverables + report.deliverables.overdue,
             on_time_approved_deliverables: sum.on_time_approved_deliverables + report.deliverables.approved_by_deadline,
+            approved_deliverables_with_deadline: sum.approved_deliverables_with_deadline + report.deliverables.approved_with_deadline,
             deliverables_with_deadline: sum.deliverables_with_deadline + report.deliverables.with_deadline,
         }), {
             campaigns: 0, creators: 0, active_collaborations: 0, completed_collaborations: 0,
             deliverables: 0, approved_deliverables: 0, overdue_deliverables: 0,
-            on_time_approved_deliverables: 0, deliverables_with_deadline: 0,
+            on_time_approved_deliverables: 0, approved_deliverables_with_deadline: 0, deliverables_with_deadline: 0,
         });
-        totals.on_time_approval_rate = totals.deliverables_with_deadline
-            ? Math.round((totals.on_time_approved_deliverables / totals.deliverables_with_deadline) * 100)
+        totals.on_time_approval_rate = totals.approved_deliverables_with_deadline
+            ? Math.round((totals.on_time_approved_deliverables / totals.approved_deliverables_with_deadline) * 100)
             : null;
 
         return NextResponse.json({ generated_at: now.toISOString(), totals, campaigns: reports });
