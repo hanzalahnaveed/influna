@@ -19,6 +19,7 @@ function serialize(link) {
         currency: link.feeCurrency,
         payment_terms: link.paymentTerms,
         proposal_note: link.proposalNote,
+        counter_note: link.counterNote,
         proposal_sent_at: link.proposalSentAt?.toISOString() ?? null,
         proposal_responded_at: link.proposalRespondedAt?.toISOString() ?? null,
     };
@@ -76,7 +77,7 @@ export async function PATCH(request, context) {
             if (typeof body.payment_terms !== "string" || !body.payment_terms.trim() || body.payment_terms.length > 2000) return jsonError("Payment terms are required and must be 2,000 characters or fewer.", 400);
             if (body.note !== undefined && (typeof body.note !== "string" || body.note.length > 2000)) return jsonError("Offer note must be 2,000 characters or fewer.", 400);
             if (link.proposalStatus === "AGREED") return jsonError("Agreed commercial terms cannot be overwritten. Create an explicit amendment workflow in a future release.", 409);
-            data = { proposalStatus: "OFFERED", proposedFee: fee, counterFee: null, agreedFee: null, feeCurrency: currency, paymentTerms: body.payment_terms.trim(), proposalNote: body.note?.trim() || null, proposalSentAt: now, proposalRespondedAt: null };
+            data = { proposalStatus: "OFFERED", proposedFee: fee, counterFee: null, agreedFee: null, feeCurrency: currency, paymentTerms: body.payment_terms.trim(), proposalNote: body.note?.trim() || null, counterNote: null, proposalSentAt: now, proposalRespondedAt: null };
         } else if (user.role === "CREATOR" && body.action === "accept_offer") {
             if (link.proposalStatus !== "OFFERED" || link.proposedFee === null) return jsonError("There is no offer awaiting acceptance.", 409);
             data = { proposalStatus: "AGREED", agreedFee: link.proposedFee, proposalRespondedAt: now };
@@ -88,7 +89,7 @@ export async function PATCH(request, context) {
             if (link.proposalStatus !== "OFFERED" && link.proposalStatus !== "COUNTERED") return jsonError("A counteroffer requires an existing offer.", 409);
             if (!Number.isFinite(fee) || fee <= 0 || fee > 9999999999.99) return jsonError("Counteroffer amount must be greater than zero and within the supported limit.", 400);
             if (body.note !== undefined && (typeof body.note !== "string" || body.note.length > 2000)) return jsonError("Counteroffer note must be 2,000 characters or fewer.", 400);
-            data = { proposalStatus: "COUNTERED", counterFee: fee, proposalNote: body.note?.trim() || link.proposalNote, proposalRespondedAt: now };
+            data = { proposalStatus: "COUNTERED", counterFee: fee, counterNote: body.note?.trim() || null, proposalRespondedAt: now };
         } else if (user.role === "BRAND" && body.action === "accept_counter") {
             if (link.proposalStatus !== "COUNTERED" || link.counterFee === null) return jsonError("There is no counteroffer awaiting acceptance.", 409);
             data = { proposalStatus: "AGREED", agreedFee: link.counterFee, proposalRespondedAt: now };
