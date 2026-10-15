@@ -54,12 +54,80 @@ export function getCreatorSource(creator) {
     return { key: "unknown_source", label: "Source not recorded", description: "The profile's origin is not recorded. Review provenance before relying on its information." };
 }
 
+
+const QUALITY_FRESH_DAYS = 30;
+const QUALITY_STALE_DAYS = 90;
+
+export function assessCreatorDataQuality(creator, now = new Date()) {
+    const accounts = creator.socialAccounts ?? [];
+    const checks = [
+        ["bio", Boolean(creator.bio?.trim())],
+        ["categories", Boolean(creator.categories?.length)],
+        ["location", Boolean(creator.country?.trim() || creator.city?.trim())],
+        ["languages", Boolean(creator.languages?.length)],
+        ["social_accounts", accounts.length > 0],
+        ["profile_links", accounts.some((account) => Boolean(account.profileUrl))],
+    ];
+    const missingFields = checks.filter(([, complete]) => !complete).map(([field]) => field);
+    const completenessScore = Math.round((checks.filter(([, complete]) => complete).length / checks.length) * 100);
+    const snapshots = accounts.flatMap((account) => {
+        const snapshot = account.snapshots?.[0];
+        return snapshot ? [{ account, snapshot }] : [];
+    });
+    const datedSnapshots = snapshots.map(({ account, snapshot }) => ({
+        account,
+        snapshot,
+        observedAt: new Date(snapshot.observedAt),
+    })).filter(({ observedAt }) => !Number.isNaN(observedAt.getTime()));
+    datedSnapshots.sort((a, b) => b.observedAt.getTime() - a.observedAt.getTime());
+    const latest = datedSnapshots[0] ?? null;
+    const ageDays = latest ? Math.max(0, (now.getTime() - latest.observedAt.getTime()) / 86400000) : null;
+    const metricsFreshness = !latest
+        ? "no_metrics"
+        : ageDays <= QUALITY_FRESH_DAYS
+            ? "recent"
+            : ageDays <= QUALITY_STALE_DAYS
+                ? "aging"
+                : "stale";
+    const verifiedAccountCount = accounts.filter((account) =>
+        Boolean(account.verifiedAt) || account.verificationStatus === "VERIFIED"
+    ).length;
+    const source = getCreatorSource(creator);
+    const warnings = [];
+    if (source.key === "synthetic_dataset") warnings.push("Fictional synthetic benchmark profile; not a real creator.");
+    if (source.key === "public_dataset_reference") warnings.push("Public-dataset reference; not independently verified as live platform data.");
+    if (source.key === "unknown_source") warnings.push("Profile origin is not recorded.");
+    if (!accounts.length) warnings.push("No social accounts are listed.");
+    if (accounts.length && !snapshots.length) warnings.push("No social metric snapshots are available.");
+    if (metricsFreshness === "aging") warnings.push("Latest available metrics are more than 30 days old.");
+    if (metricsFreshness === "stale") warnings.push("Latest available metrics are more than 90 days old.");
+    if (accounts.length > verifiedAccountCount) warnings.push("Some social accounts are not verified.");
+    if (missingFields.length) warnings.push("Profile information is incomplete.");
+
+    return {
+        profile_completeness_score: completenessScore,
+        profile_completeness_label: completenessScore >= 85 ? "Complete profile" : completenessScore >= 60 ? "Partially complete" : "Limited profile data",
+        completed_fields: checks.filter(([, complete]) => complete).length,
+        total_fields: checks.length,
+        missing_fields: missingFields,
+        metrics_freshness: metricsFreshness,
+        latest_metrics_observed_at: latest ? latest.observedAt.toISOString() : null,
+        latest_metrics_age_days: ageDays === null ? null : Math.floor(ageDays),
+        metric_account_count: snapshots.length,
+        social_account_count: accounts.length,
+        verified_account_count: verifiedAccountCount,
+        warnings,
+        note: "Data quality measures profile completeness, metric availability and recency, and account verification status. It does not establish authenticity or predict campaign performance.",
+    };
+}
+
 export function serializeCreator(creator, { includePrivateVerificationFeedback = false } = {}) {
     const profileSource = getCreatorSource(creator);
     return {
         profile_source: profileSource.key,
         profile_source_label: profileSource.label,
         profile_source_description: profileSource.description,
+        data_quality: assessCreatorDataQuality(creator),
         id: creator.id,
         display_name: creator.displayName,
         bio: creator.bio,
