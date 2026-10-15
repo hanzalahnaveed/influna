@@ -18,6 +18,20 @@ export async function GET(_request, context) {
             where: { campaignId },
             include: {
                 _count: { select: { deliverables: true } },
+                deliverables: {
+                    select: { id: true, title: true, dueAt: true, status: true },
+                    orderBy: [{ dueAt: "asc" }, { createdAt: "asc" }],
+                },
+                proposalStatus: true,
+                proposedFee: true,
+                counterFee: true,
+                agreedFee: true,
+                feeCurrency: true,
+                paymentTerms: true,
+                proposalNote: true,
+                counterNote: true,
+                proposalSentAt: true,
+                proposalRespondedAt: true,
                 creator: {
                     include: {
                         socialAccounts: {
@@ -97,6 +111,24 @@ export async function GET(_request, context) {
                 }),
                 status: link.status,
                 deliverable_count: link._count.deliverables,
+                deliverables: link.deliverables.map((item) => ({
+                    id: item.id,
+                    title: item.title,
+                    due_at: item.dueAt?.toISOString() ?? null,
+                    status: item.status,
+                })),
+                commercial: {
+                    proposal_status: link.proposalStatus,
+                    proposed_fee: link.proposedFee === null ? null : Number(link.proposedFee),
+                    counter_fee: link.counterFee === null ? null : Number(link.counterFee),
+                    agreed_fee: link.agreedFee === null ? null : Number(link.agreedFee),
+                    fee_currency: link.feeCurrency,
+                    payment_terms: link.paymentTerms,
+                    proposal_note: link.proposalNote,
+                    counter_note: link.counterNote,
+                    proposal_sent_at: link.proposalSentAt?.toISOString() ?? null,
+                    proposal_responded_at: link.proposalRespondedAt?.toISOString() ?? null,
+                },
                 match_score: link.matchScore,
                 match_reasons: link.matchReasons,
                 invited_at: link.invitedAt?.toISOString() ?? null,
