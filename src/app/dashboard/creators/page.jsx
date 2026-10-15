@@ -18,6 +18,8 @@ export default function CreatorDiscoveryPage() {
     const [matches, setMatches] = useState([]);
     const [search, setSearch] = useState("");
     const [country, setCountry] = useState("");
+    const [platformFilter, setPlatformFilter] = useState("");
+    const [categoryFilter, setCategoryFilter] = useState("");
     const [selectedCampaign, setSelectedCampaign] = useState("");
     const [loading, setLoading] = useState(true);
     const [matching, setMatching] = useState(false);
@@ -62,7 +64,16 @@ export default function CreatorDiscoveryPage() {
         return () => { cancelled = true; };
     }, []);
 
-    const visibleCreators = useMemo(() => creators, [creators]);
+    const filterOptions = useMemo(() => ({
+        platforms: [...new Set(creators.flatMap((creator) => (creator.social_accounts || []).map((account) => account.platform)).filter(Boolean))].sort(),
+        categories: [...new Set(creators.flatMap((creator) => creator.categories || []).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
+    }), [creators]);
+
+    const visibleCreators = useMemo(() => creators.filter((creator) => {
+        const matchesPlatform = !platformFilter || (creator.social_accounts || []).some((account) => account.platform === platformFilter);
+        const matchesCategory = !categoryFilter || (creator.categories || []).some((category) => category.toLowerCase() === categoryFilter.toLowerCase());
+        return matchesPlatform && matchesCategory;
+    }), [creators, platformFilter, categoryFilter]);
     const selectedCampaignTitle = campaigns.find((item) => item.id === selectedCampaign)?.campaign_details?.campaign_title;
 
     async function findMatches() {
@@ -109,8 +120,22 @@ export default function CreatorDiscoveryPage() {
                     <input className={inputClass} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name, bio, or category" />
                     <input className={inputClass} value={country} onChange={(e) => setCountry(e.target.value)} placeholder="Country, e.g. Pakistan" />
                     <button className={primaryButton} type="submit"><FiSearch size={15} /> Search</button>
-                    <button className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#D9DEE7] px-3 py-2.5 text-sm font-medium text-[#495057] hover:bg-[#F8F9FA]" type="button" onClick={() => { setSearch(""); setCountry(""); }}><FiRefreshCw size={14} /> Reset</button>
+                    <button className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#D9DEE7] px-3 py-2.5 text-sm font-medium text-[#495057] hover:bg-[#F8F9FA]" type="button" onClick={() => { setSearch(""); setCountry(""); setPlatformFilter(""); setCategoryFilter(""); }}><FiRefreshCw size={14} /> Reset</button>
                 </form>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <label className="text-xs font-medium text-[#495057]">Platform
+                        <select className={inputClass + " mt-1"} value={platformFilter} onChange={(e) => setPlatformFilter(e.target.value)}>
+                            <option value="">All platforms</option>
+                            {filterOptions.platforms.map((platform) => <option key={platform} value={platform}>{platform}</option>)}
+                        </select>
+                    </label>
+                    <label className="text-xs font-medium text-[#495057]">Category
+                        <select className={inputClass + " mt-1"} value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+                            <option value="">All categories</option>
+                            {filterOptions.categories.map((category) => <option key={category} value={category}>{category}</option>)}
+                        </select>
+                    </label>
+                </div>
             </section>
 
             <section className="rounded-xl border border-[#E3E7ED] bg-white p-4 shadow-sm sm:p-5">
@@ -160,9 +185,8 @@ export default function CreatorDiscoveryPage() {
                 ) : visibleCreators.length === 0 ? (
                     <div className="rounded-xl border border-dashed border-[#CBD2DC] bg-white px-6 py-12 text-center">
                         <FiUsers size={28} className="mx-auto text-[#9CA3AF]" />
-                        <h3 className="mt-3 font-semibold">No creator profiles yet</h3>
-                        <p className="mx-auto mt-1 max-w-md text-sm text-[#6B7280]">Add a creator profile to start testing discovery and campaign matching. Metrics and account verification are not inferred from a handle.</p>
-                        <button className={primaryButton + " mt-4"} onClick={() => setShowForm(true)} type="button"><FiPlus size={15} /> Add first creator</button>
+                        <h3 className="mt-3 font-semibold">{creators.length ? "No creators match these filters" : "No public creator profiles yet"}</h3>
+                        <p className="mx-auto mt-1 max-w-md text-sm text-[#6B7280]">Public creator profiles will appear here after creators register, complete their profiles, and choose to make them public. Metrics and account verification are never inferred from a handle.</p>
                     </div>
                 ) : (
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
