@@ -153,6 +153,8 @@ export default function CommercialsPage() {
                     const pendingOffer = item.proposal_status === "OFFERED";
                     const pendingCounter = item.proposal_status === "COUNTERED";
                     const agreed = item.proposal_status === "AGREED";
+                    const recordedTotal = payments.filter((payment) => payment.campaign_creator_id === key && payment.status !== "CANCELLED").reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+                    const remainingFee = Math.max(0, Number(item.agreed_fee || 0) - recordedTotal);
                     return <article key={key} className="rounded-xl border border-[#E3E7ED] bg-white p-4 shadow-sm sm:p-5">
                         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
                             <div><h3 className="font-semibold">{link.campaign_title || "Untitled campaign"}</h3><p className="mt-1 text-sm text-[#6B7280]">{isBrand ? (link.display_name || "Creator") : "Brand campaign"} · Collaboration status: {label(link.status)}</p></div>
@@ -181,12 +183,12 @@ export default function CommercialsPage() {
                         {!isBrand && pendingOffer && <div className="mt-4 rounded-lg border border-[#E3E7ED] p-3">
                             <h4 className="text-sm font-semibold">Respond to the offer</h4>
                             <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_2fr]">
-                                <label className="text-xs font-medium text-[#495057]">Your counteroffer<input className={field + " mt-1"} type="number" min="0.01" step="0.01" value={draft.counter_amount || ""} onChange={(e) => updateDraft(key, "counter_amount", e.target.value)} placeholder="Amount in " + (item.currency || "USD") /></label>
+                                <label className="text-xs font-medium text-[#495057]">Your counteroffer<input className={field + " mt-1"} type="number" min="0.01" step="0.01" value={draft.counter_amount || ""} onChange={(e) => updateDraft(key, "counter_amount", e.target.value)} placeholder={`Counteroffer amount in ${item.currency || "USD"}`} /></label>
                                 <label className="text-xs font-medium text-[#495057]">Counteroffer note (optional)<input className={field + " mt-1"} value={draft.counter_note || ""} onChange={(e) => updateDraft(key, "counter_note", e.target.value)} placeholder="Explain your requested fee or terms" /></label>
                             </div>
                             <div className="mt-3 flex flex-wrap gap-2">
                                 <button className={primary} type="button" disabled={busy === key} onClick={() => commercialAction(link, "accept_offer")}><FiCheck size={14} /> Accept offer</button>
-                                <button className={secondary} type="button" disabled={busy === key} onClick={() => commercialAction(link, "counter_offer", { amount: Number(draft.counter_amount), note: draft.counter_note || "" })}><FiDollarSign size={14} /> Counteroffer</button>
+                                <button className={secondary} type="button" disabled={busy === key || !draft.counter_amount || Number(draft.counter_amount) <= 0} onClick={() => commercialAction(link, "counter_offer", { amount: Number(draft.counter_amount), note: draft.counter_note || "" })}><FiDollarSign size={14} /> Counteroffer</button>
                                 <button className={secondary} type="button" disabled={busy === key} onClick={() => commercialAction(link, "reject_offer")}><FiX size={14} /> Reject</button>
                             </div>
                         </div>}
