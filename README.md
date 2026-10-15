@@ -111,3 +111,17 @@ Brands can open `/dashboard/performance` to record time-stamped performance snap
 - The `CampaignPerformanceSnapshot` table stores source, capture time, metrics, optional attributed revenue, and the user who recorded the snapshot.
 
 The schema change is delivered in `20261016170000_campaign_performance_tracking`. Run the usual Prisma migration and client-generation commands locally after pulling this milestone.
+
+
+## Explainable creator matching
+
+The campaign matching endpoint (`POST /api/v1/campaigns/:id/matches`) uses the current rule-based `rule_based_v3` profile-fit scorer. It evaluates applicable campaign and creator data such as category alignment, objective/content signals, creator location, languages, platform presence, follower range, engagement rate, and available audience age, gender, or geography breakdowns.
+
+The response includes:
+- `match_score`: weighted profile-fit score from available evaluated factors; it is not a probability or prediction of campaign performance.
+- `match_confidence`: the percentage of applicable weighted criteria that could be assessed from available data.
+- `recommendation_tier` and `recommendation_label`: a review aid based on profile fit and data coverage.
+- `match_factors` and `match_reasons`: factor-level scores and plain-language explanations.
+- `missing_data`: gaps that a brand should review before relying on the recommendation.
+
+Creator discovery displays these details and the available data gaps before the brand records an invitation. The matcher does not currently score budget fit because creator rate cards are not yet captured; the campaign budget is not treated as evidence of creator affordability. Social metrics and audience insights must be reviewed for source and verification status. These recommendations are explainable heuristics, not a trained ML model or a guarantee of results.
