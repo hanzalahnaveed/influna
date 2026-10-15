@@ -63,7 +63,31 @@ export async function GET(_request, context) {
                 country: link.creator.country,
                 city: link.creator.city,
                 languages: link.creator.languages,
-                social_accounts: link.creator.socialAccounts,
+                social_accounts: link.creator.socialAccounts.map((account) => {
+                    const snapshot = account.snapshots[0] ?? null;
+                    return {
+                        id: account.id,
+                        platform: account.platform,
+                        handle: account.handle,
+                        profile_url: account.profileUrl,
+                        verification_status: account.verifiedAt ? "verified" : account.connectedAt ? "connected_unverified" : "unverified",
+                        is_verified: Boolean(account.verifiedAt),
+                        account_data_source: account.dataSource,
+                        connected_at: account.connectedAt?.toISOString() ?? null,
+                        verified_at: account.verifiedAt?.toISOString() ?? null,
+                        latest_metrics: snapshot ? {
+                            data_source: snapshot.dataSource,
+                            observed_at: snapshot.observedAt.toISOString(),
+                            trust_status: snapshot.dataSource === "creator_provided" ? "creator_provided" : account.verifiedAt ? "verified" : "unverified_source",
+                            is_verified: Boolean(account.verifiedAt) && snapshot.dataSource !== "creator_provided",
+                            follower_count: snapshot.followerCount,
+                            average_views: snapshot.averageViews,
+                            average_likes: snapshot.averageLikes,
+                            average_comments: snapshot.averageComments,
+                            engagement_rate: snapshot.engagementRate,
+                        } : null,
+                    };
+                }),
                 status: link.status,
                 deliverable_count: link._count.deliverables,
                 match_score: link.matchScore,
