@@ -208,7 +208,15 @@ export default function CampaignWorkflowPage() {
                                         <h3 className="font-semibold">{record.display_name}</h3>
                                         <p className="mt-0.5 text-xs text-[#6B7280]">{[record.city, record.country].filter(Boolean).join(", ") || "Location not provided"} · {(record.categories || []).join(", ") || "No categories listed"}</p>
                                         <div className="mt-2 flex flex-wrap gap-2">
-                                            {(record.social_accounts || []).map((account) => <span key={account.id} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600">{account.platform} · @{account.handle}</span>)}
+                                            {(record.social_accounts || []).map((account) => (
+                                                <span key={account.id} className="inline-flex flex-wrap items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1.5 text-xs text-slate-600">
+                                                    {account.platform} · @{account.handle}
+                                                    <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${account.is_verified ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
+                                                        {account.is_verified ? "Verified" : "Unverified"}
+                                                    </span>
+                                                    {account.latest_metrics && <span className="text-[10px] text-slate-500">{(account.latest_metrics.data_source || "unknown").replaceAll("_", " ")} metrics</span>}
+                                                </span>
+                                            ))}
                                         </div>
                                     </div>
                                 </div>
