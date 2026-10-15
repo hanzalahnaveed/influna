@@ -93,6 +93,27 @@ export default function CreatorInvitationsPage() {
         }
     }
 
+    async function withdrawApplication(invitation) {
+        setBusyId(invitation.campaign_creator_id);
+        setError("");
+        setNotice("");
+        try {
+            const response = await fetch(`/api/v1/campaigns/${encodeURIComponent(invitation.campaign_id)}/creators/${encodeURIComponent(invitation.campaign_creator_id)}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "withdraw_application" }),
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data?.error || "Could not withdraw application.");
+            setNotice("Application withdrawn.");
+            await loadInvitations(creatorId);
+        } catch (err) {
+            setError(err.message || "Could not withdraw application.");
+        } finally {
+            setBusyId("");
+        }
+    }
+
     async function submitContent(invitation) {
         const draft = contentDrafts[invitation.campaign_creator_id] || {};
         if (!draft.content_url?.trim()) {
@@ -161,6 +182,11 @@ export default function CreatorInvitationsPage() {
                                 <div><p className="text-xs text-[#6B7280]">Profile fit</p><p className="mt-1 text-sm font-medium">{invitation.match_score == null ? "Not scored" : `${Math.round(invitation.match_score)}%`}</p></div>
                             </div>
                             {invitation.content_url && <p className="mt-3 text-sm"><a className="text-[#B85E00] underline" href={invitation.content_url} target="_blank" rel="noreferrer">View submitted content</a></p>}
+                            {invitation.status === "Applied" && <div className="mt-4">
+                                <button type="button" className={secondaryButton} disabled={busyId === invitation.campaign_creator_id} onClick={() => withdrawApplication(invitation)}>
+                                    <FiXCircle size={14} /> {busyId === invitation.campaign_creator_id ? "Withdrawing..." : "Withdraw application"}
+                                </button>
+                            </div>}
                             {["Accepted", "ChangesRequested"].includes(invitation.status) && <form className="mt-4 flex flex-col gap-3 rounded-lg border border-[#E3E7ED] bg-[#F8F9FA] p-4" onSubmit={(event) => { event.preventDefault(); submitContent(invitation); }}>
                                 <div><h4 className="text-sm font-semibold">Submit or resubmit content</h4><p className="mt-1 text-xs text-[#6B7280]">Paste the URL of your draft or published content. This records the link; it does not upload a file.</p></div>
                                 <label className="text-xs font-semibold text-[#495057]">Content URL
