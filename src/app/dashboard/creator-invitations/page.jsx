@@ -124,8 +124,8 @@ export default function CreatorInvitationsPage() {
         <main className="flex flex-col gap-6 pb-8 text-[#212529]">
             <header>
                 <p className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#FA8500]">Creator portal</p>
-                <h1 className="text-2xl font-bold tracking-tight sm:text-[28px]">Campaign invitations</h1>
-                <p className="mt-1 max-w-2xl text-sm text-[#6B7280]">Review campaign details and respond to invitations sent to your creator account.</p>
+                <h1 className="text-2xl font-bold tracking-tight sm:text-[28px]">Applications & collaborations</h1>
+                <p className="mt-1 max-w-2xl text-sm text-[#6B7280]">Track your campaign applications, review invitations, and follow accepted collaborations from your creator account.</p>
             </header>
 
             {error && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
@@ -139,18 +139,18 @@ export default function CreatorInvitationsPage() {
 
             <section className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-semibold">Invitations and collaborations</h2>
+                    <h2 className="text-lg font-semibold">Applications, invitations and collaborations</h2>
                     <span className="text-xs text-[#6B7280]">{invitations.length} records</span>
                 </div>
                 {loading ? <div className="rounded-xl border border-[#E3E7ED] bg-white p-10 text-center text-sm text-[#6B7280]">Loading invitations...</div>
                     : !creatorId ? <div className="rounded-xl border border-dashed border-[#CBD2DC] bg-white p-10 text-center text-sm text-[#6B7280]">Sign in with a creator account to view your invitation inbox.</div>
-                    : invitations.length === 0 ? <div className="rounded-xl border border-dashed border-[#CBD2DC] bg-white p-10 text-center text-sm text-[#6B7280]">No invitations yet. Campaign teams can record an invitation from Creator Workflow.</div>
+                    : invitations.length === 0 ? <div className="rounded-xl border border-dashed border-[#CBD2DC] bg-white p-10 text-center text-sm text-[#6B7280]">No applications or invitations yet. Explore active campaigns or wait for a brand to invite your creator profile.</div>
                     : invitations.map((invitation) => (
                         <article key={invitation.campaign_creator_id} className="rounded-xl border border-[#E3E7ED] bg-white p-4 shadow-sm sm:p-5">
                             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                 <div>
                                     <h3 className="text-base font-semibold">{invitation.campaign_title}</h3>
-                                    <p className="mt-1 text-xs text-[#6B7280]">{invitation.invited_at ? `Invited ${formatDate(invitation.invited_at)}` : "Invitation date unavailable"}</p>
+                                    <p className="mt-1 text-xs text-[#6B7280]">{invitation.status === "Applied" ? `Applied ${formatDate(invitation.updated_at) || "recently"}` : invitation.invited_at ? `Invited ${formatDate(invitation.invited_at)}` : "Invitation date unavailable"}</p>
                                 </div>
                                 <span className="w-fit rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700">{humanize(invitation.status)}</span>
                             </div>
