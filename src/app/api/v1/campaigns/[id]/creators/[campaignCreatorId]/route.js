@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { campaignCreatorTransitions as transitions } from "@/lib/campaign-workflow.mjs";
+import { createNotification } from "@/lib/notifications";
 
 function jsonError(message, status) {
     return NextResponse.json({ error: message }, { status });
@@ -57,7 +58,7 @@ export async function PATCH(request, context) {
                     ? { creator: { ownerUserId: auth.user.id } }
                     : { campaign: { ownerUserId: auth.user.id } }),
             },
-            select: { id: true, status: true },
+            select: { id: true, status: true, creator: { select: { ownerUserId: true, displayName: true } }, campaign: { select: { ownerUserId: true, campaignDetails: true } } },
         });
         if (!link) return jsonError("Campaign creator record not found.", 404);
         if (["submit_content", "request_changes", "approve_content"].includes(body.action)) {
@@ -163,6 +164,23 @@ export async function PATCH(request, context) {
             where: { id: link.id },
         });
         if (!updated) return jsonError("Campaign creator record not found.", 404);
+
+        const campaignTitle = link.campaign.campaignDetails?.campaign_title || "Untitled campaign";
+        const creatorName = link.creator.displayName || "The creator";
+        const eventByAction = {
+            invite: { userId: link.creator.ownerUserId, type: "campaign_invitation", title: "New campaign invitation", message: "You have been invited to “" + campaignTitle + "”.", href: "/dashboard/creator-invitations" },
+            accept: { userId: link.campaign.ownerUserId, type: "campaign_response", title: "Invitation accepted", message: creatorName + " accepted the invitation to “" + campaignTitle + "”.", href: "/dashboard/campaign-workflow" },
+            decline: { userId: link.campaign.ownerUserId, type: "campaign_response", title: "Invitation declined", message: creatorName + " declined the invitation to “" + campaignTitle + "”.", href: "/dashboard/campaign-workflow" },
+            accept_application: { userId: link.creator.ownerUserId, type: "campaign_response", title: "Application accepted", message: "Your application to “" + campaignTitle + "” was accepted.", href: "/dashboard/creator-invitations" },
+            decline_application: { userId: link.creator.ownerUserId, type: "campaign_response", title: "Application update", message: "Your application to “" + campaignTitle + "” was declined.", href: "/dashboard/creator-invitations" },
+            withdraw_application: { userId: link.campaign.ownerUserId, type: "campaign_response", title: "Application withdrawn", message: creatorName + " withdrew their application to “" + campaignTitle + "”.", href: "/dashboard/campaign-workflow" },
+            submit_content: { userId: link.campaign.ownerUserId, type: "content_submission", title: "Content submitted", message: creatorName + " submitted content for “" + campaignTitle + "”.", href: "/dashboard/deliverables" },
+            request_changes: { userId: link.creator.ownerUserId, type: "content_review", title: "Changes requested", message: "The brand requested changes for “" + campaignTitle + "”.", href: "/dashboard/deliverables" },
+            approve_content: { userId: link.creator.ownerUserId, type: "content_review", title: "Content approved", message: "Your content for “" + campaignTitle + "” was approved.", href: "/dashboard/deliverables" },
+            complete: { userId: link.creator.ownerUserId, type: "collaboration_completed", title: "Collaboration completed", message: "The collaboration for “" + campaignTitle + "” has been marked complete.", href: "/dashboard/creator-invitations" },
+            cancel: { userId: link.creator.ownerUserId, type: "collaboration_cancelled", title: "Collaboration cancelled", message: "The collaboration for “" + campaignTitle + "” was cancelled.", href: "/dashboard/creator-invitations" },
+        };
+        if (eventByAction[body.action]) await createNotification(eventByAction[body.action]);
 
         return NextResponse.json({
             campaign_creator_id: updated.id,
