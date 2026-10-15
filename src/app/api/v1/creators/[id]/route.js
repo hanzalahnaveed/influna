@@ -23,7 +23,7 @@ export async function GET(_request, context) {
         const user = await getCurrentUser();
         const creator = await prisma.creatorProfile.findUnique({ where: { id }, include: creatorInclude });
         if (!creator || (!creator.isPublic && creator.ownerUserId !== user?.id)) return jsonError("Creator not found.", 404);
-        return NextResponse.json(serializeCreator(creator));
+        return NextResponse.json(serializeCreator(creator, { includePrivateVerificationFeedback: creator.ownerUserId === user?.id }));
     } catch (error) {
         console.error("Failed to load creator:", error);
         return jsonError("Unable to load creator.", 500);
@@ -62,7 +62,7 @@ export async function PATCH(request, context) {
             },
             include: creatorInclude,
         });
-        return NextResponse.json(serializeCreator(creator));
+        return NextResponse.json(serializeCreator(creator, { includePrivateVerificationFeedback: true }));
     } catch (error) {
         console.error("Failed to update creator:", error);
         return jsonError("Unable to update creator.", 500);
