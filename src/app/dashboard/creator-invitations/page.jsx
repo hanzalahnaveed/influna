@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { FiCheck, FiClock, FiRefreshCw, FiXCircle } from "react-icons/fi";
 
-const inputClass = "w-full rounded-lg border border-[#D9DEE7] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#FA8500]";
 const primaryButton = "inline-flex items-center justify-center gap-2 rounded-lg bg-[#FA8500] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#e87900] disabled:cursor-not-allowed disabled:opacity-50";
 const secondaryButton = "inline-flex items-center justify-center gap-2 rounded-lg border border-[#D9DEE7] bg-white px-4 py-2.5 text-sm font-semibold text-[#495057] transition hover:bg-[#F8F9FA] disabled:cursor-not-allowed disabled:opacity-50";
 
@@ -18,7 +17,6 @@ function formatDate(value) {
 }
 
 export default function CreatorInvitationsPage() {
-    const [creators, setCreators] = useState([]);
     const [creatorId, setCreatorId] = useState("");
     const [invitations, setInvitations] = useState([]);
     const [loading, setLoading] = useState(true);
