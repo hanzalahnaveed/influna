@@ -28,6 +28,7 @@ const LeftSidebar = () => {
     const pathname = usePathname();
     const router = useRouter();
     const [menuItems, setMenuItems] = useState(defaultMenu);
+    const [unreadCount, setUnreadCount] = useState(0);
 
     useEffect(() => {
         let cancelled = false;
@@ -62,6 +63,20 @@ const LeftSidebar = () => {
         return () => { cancelled = true; };
     }, []);
 
+    useEffect(() => {
+        let cancelled = false;
+        async function loadUnreadCount() {
+            try {
+                const response = await fetch("/api/v1/notifications?unread=true&limit=1", { cache: "no-store" });
+                const data = await response.json();
+                if (!cancelled && response.ok) setUnreadCount(data.unread_count || 0);
+            } catch {
+                // The sidebar remains usable if the notification count cannot be loaded.
+            }
+        }
+        loadUnreadCount();
+        return () => { cancelled = true; };
+    }, [pathname]);
     const renderLinkSideBar = (link, Icon, name) => {
         const isActive = link === "/dashboard"
             ? pathname === link
@@ -71,7 +86,8 @@ const LeftSidebar = () => {
             <Link href={link} key={link}>
                 <div className={`roboto-regular mx-5 flex h-[40px] items-center justify-start gap-3 rounded-xl border-none px-5 text-[14px] text-white transition-colors ${isActive ? "bg-[#FA8500]" : "hover:bg-[#FA8500]"}`}>
                     {Icon && <Icon size={20} />}
-                    <span>{name}</span>
+                    <span className="min-w-0 flex-1">{name}</span>
+                    {link === "/dashboard/notifications" && unreadCount > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FA8500] px-1 text-[10px] font-bold text-white">{unreadCount > 99 ? "99+" : unreadCount}</span>}
                 </div>
             </Link>
         );
