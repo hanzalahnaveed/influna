@@ -44,7 +44,7 @@ export async function GET(_request, context) {
                 where: { campaignId },
                 select: {
                     creatorId: true, status: true, matchScore: true,
-                    creator: { select: { id: true, displayName: true, country: true, city: true, rateCards: { where: { isPublic: true }, orderBy: [{ platform: "asc" }, { deliverableType: "asc" }] } } },
+                    id: true, creator: { select: { id: true, displayName: true, country: true, city: true, rateCards: { where: { isPublic: true }, orderBy: [{ platform: "asc" }, { deliverableType: "asc" }] } } },
                 },
                 orderBy: [{ matchScore: "desc" }, { createdAt: "desc" }],
             }),
@@ -57,7 +57,7 @@ export async function GET(_request, context) {
         return NextResponse.json({
             campaign_id: campaignId, budget: campaignBudget(campaign),
             creators: links.map(link => ({
-                creator_id: link.creator.id, display_name: link.creator.displayName,
+                campaign_creator_id: link.id, creator_id: link.creator.id, display_name: link.creator.displayName, status: link.status,
                 location: [link.creator.city, link.creator.country].filter(Boolean).join(", "),
                 status: link.status, match_score: link.matchScore,
                 rate_cards: link.creator.rateCards.map(rate => ({
