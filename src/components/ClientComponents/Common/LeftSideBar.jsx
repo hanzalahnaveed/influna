@@ -7,7 +7,7 @@ import Link from "next/link";
 import { MdOutlineSpaceDashboard, MdOutlineCampaign } from "react-icons/md";
 import { IoSettingsOutline } from "react-icons/io5";
 import { IoIosLogOut } from "react-icons/io";
-import { FiUsers, FiGitPullRequest, FiMail } from "react-icons/fi";
+import { FiUsers, FiGitPullRequest, FiMail, FiUserCircle } from "react-icons/fi";
 
 const defaultMenu = [
     { id: 1, sidebar_name: "Dashboard", route: "/dashboard", icon: MdOutlineSpaceDashboard },
@@ -15,15 +15,37 @@ const defaultMenu = [
     { id: 3, sidebar_name: "Creators", route: "/dashboard/creators", icon: FiUsers },
     { id: 4, sidebar_name: "Creator Workflow", route: "/dashboard/campaign-workflow", icon: FiGitPullRequest },
     { id: 5, sidebar_name: "Creator Invitations", route: "/dashboard/creator-invitations", icon: FiMail },
+    { id: 6, sidebar_name: "My Creator Profile", route: "/dashboard/creator-profile", icon: FiUserCircle },
 ];
 
 const LeftSidebar = () => {
     const pathname = usePathname();
     const router = useRouter();
     const [menuItems, setMenuItems] = useState(defaultMenu);
+    const [role, setRole] = useState("");
 
     useEffect(() => {
-        setMenuItems(defaultMenu);
+        let cancelled = false;
+        async function loadRole() {
+            try {
+                const response = await fetch("/api/v1/auth/me", { cache: "no-store" });
+                const data = await response.json();
+                if (!cancelled) {
+                    const currentRole = response.ok ? data?.user?.role || "" : "";
+                    setRole(currentRole);
+                    setMenuItems(currentRole === "CREATOR"
+                        ? [
+                            { id: 5, sidebar_name: "Creator Invitations", route: "/dashboard/creator-invitations", icon: FiMail },
+                            { id: 6, sidebar_name: "My Creator Profile", route: "/dashboard/creator-profile", icon: FiUserCircle },
+                        ]
+                        : currentRole === "BRAND" ? defaultMenu.filter((item) => item.id !== 5 && item.id !== 6) : []);
+                }
+            } catch {
+                if (!cancelled) { setRole(""); setMenuItems([]); }
+            }
+        }
+        loadRole();
+        return () => { cancelled = true; };
     }, []);
 
     const renderLinkSideBar = (link, Icon, name) => {
@@ -65,13 +87,16 @@ const LeftSidebar = () => {
                     <IoSettingsOutline size={20} />
                     <span>Settings</span>
                 </Link>
-                <Link
-                    href="/dashboard/logout"
-                    className="flex h-[40px] w-full items-center gap-3 rounded-xl px-5 text-[14px] text-white transition-colors hover:bg-[#FA8500]"
+                <button
+                    type="button"
+                    onClick={async () => {
+                        try { await fetch("/api/v1/auth/logout", { method: "POST" }); } finally { router.push("/auth"); router.refresh(); }
+                    }}
+                    className="flex h-[40px] w-full items-center gap-3 rounded-xl px-5 text-left text-[14px] text-white transition-colors hover:bg-[#FA8500]"
                 >
                     <IoIosLogOut size={20} />
                     <span>Logout</span>
-                </Link>
+                </button>
             </div>
         </div>
     );
