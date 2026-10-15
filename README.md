@@ -44,7 +44,7 @@ For production, configure `DATABASE_URL`, run `npm run db:generate` during the b
 | `POST` | `/api/v1/campaigns/:id/matches` | Calculate and save transparent rule-based creator matches |
 | `GET` | `/api/v1/campaigns/:id/creators` | List creator records and workflow status for a campaign |
 | `PATCH` | `/api/v1/campaigns/:id/creators/:campaignCreatorId` | Apply a validated creator collaboration workflow transition |
-| `GET` | `/api/v1/creators/:id/invitations` | Preview invitations and collaborations for a creator profile |
+| `GET` | `/api/v1/creators/:id/invitations` | List invitations for the signed-in creator profile only |\n| `POST` | `/api/v1/creators/:id/social-accounts` | Add a self-reported social account to the signed-in creator profile |\n| `DELETE` | `/api/v1/creators/:id/social-accounts/:socialAccountId` | Remove a social account owned by the signed-in creator |
 
 Brand-only campaign endpoints and creator-only profile/invitation endpoints require an active session. Campaign reads and writes are scoped to the signed-in brand owner; creator profile updates, metric snapshots, invitations, and content submissions are scoped to the signed-in creator. New creator profiles start private. Existing records without an owner remain in the database but are not visible through owner-scoped campaign endpoints. Passwords are hashed with Node.js scrypt; sessions use random opaque tokens stored as SHA-256 digests and an HTTP-only, SameSite=Strict cookie.
 
@@ -58,6 +58,6 @@ The matching endpoint currently uses a deterministic, explainable rule-based sco
 
 ## Important limitations
 
-The dashboard includes a manual campaign collaboration tracker with Suggested → Invited → Accepted/Declined → ContentSubmitted → ChangesRequested/Approved → Completed states, plus cancellation. A creator invitation inbox prototype can preview campaign invitations and record accept/decline responses. It uses a profile selector rather than authenticated creator accounts and must not be treated as a secure creator portal. The tracker does not send invitations or notifications. Content links and review notes are stored with timestamps.
+The dashboard includes a manual campaign collaboration tracker with Suggested → Invited → Accepted/Declined → ContentSubmitted → ChangesRequested/Approved → Completed states, plus cancellation. Creator accounts can manage their own profile and social handles at `/dashboard/creator-profile`, review invitations at `/dashboard/creator-invitations`, and submit or resubmit content URLs for brand review. The tracker does not send invitations or notifications, and social handles are self-reported until a real platform authorization/verification flow is implemented. Content links and review notes are stored with timestamps.
 
 Email verification, password reset, rate limiting/abuse controls, CSRF tokens for cross-site deployments, creator consent/verification flows, Meta OAuth/API integration, automated invitations/notifications, payment execution, and production monitoring are not implemented yet. Authentication and ownership checks now cover the primary campaign, creator, invitation, matching, metric-snapshot, and dashboard APIs, but this is still an early-stage foundation and requires a security review before production exposure. Do not use real creator data in a public demo without permission.
