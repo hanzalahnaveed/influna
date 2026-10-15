@@ -19,6 +19,9 @@ export async function GET() {
                         deliverables: {
                             select: { id: true, status: true, dueAt: true, updatedAt: true },
                         },
+                        payments: {
+                            select: { amount: true, currency: true, status: true },
+                        },
                     },
                 },
             },
@@ -38,6 +41,18 @@ export async function GET() {
             const onTimeApproved = dueDeliverables.filter((item) =>
                 item.status === "Approved" && item.updatedAt <= item.dueAt
             ).length;
+            const currencyTotals = (items, amountOf) => Object.entries(items.reduce((result, item) => {
+                const currency = item.currency || "USD";
+                result[currency] = (result[currency] || 0) + amountOf(item);
+                return result;
+            }, {})).map(([currency, amount]) => ({ currency, amount: Math.round(amount * 100) / 100 }));
+            const agreedFees = links.filter((link) => link.proposalStatus === "AGREED" && link.agreedFee !== null)
+                .map((link) => ({ currency: link.feeCurrency || "USD", amount: Number(link.agreedFee) }));
+            const payments = links.flatMap((link) => link.payments || []);
+            const paymentTotals = (statusFilter) => currencyTotals(
+                payments.filter((payment) => statusFilter.includes(payment.status)),
+                (payment) => Number(payment.amount)
+            );
 
             return {
                 id: campaign.id,
@@ -82,6 +97,14 @@ export async function GET() {
                     const decided = acceptedPath + countStatus("Declined");
                     return decided ? Math.round((acceptedPath / decided) * 100) : null;
                 })(),
+                commercials: {
+                    agreed_creator_fees: currencyTotals(agreedFees, (item) => item.amount),
+                    planned_or_processing: paymentTotals(["PLANNED", "PROCESSING"]),
+                    marked_paid: paymentTotals(["PAID"]),
+                    cancelled: paymentTotals(["CANCELLED"]),
+                    payment_record_count: payments.length,
+                    agreed_collaborations: links.filter((link) => link.proposalStatus === "AGREED").length,
+                },
             };
         });
 
