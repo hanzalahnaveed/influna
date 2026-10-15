@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { scoreCreatorForCampaign } from "@/lib/matching";
+import { getCreatorSource } from "@/lib/creators";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
 
@@ -48,9 +49,13 @@ export async function POST(request, context) {
                     matchReasons: item.match_reasons,
                 },
             });
+            const profileSource = getCreatorSource(item.creator);
             return {
                 campaign_creator_id: saved.id,
                 creator_id: item.creator.id,
+                profile_source: profileSource.key,
+                profile_source_label: profileSource.label,
+                profile_source_description: profileSource.description,
                 display_name: item.creator.displayName,
                 categories: item.creator.categories,
                 country: item.creator.country,
@@ -61,6 +66,14 @@ export async function POST(request, context) {
                     platform: account.platform,
                     handle: account.handle,
                     profile_url: account.profileUrl,
+                    account_data_source: account.dataSource,
+                    verification_status: account.verifiedAt || account.verificationStatus === "VERIFIED"
+                        ? "verified"
+                        : account.verificationStatus === "PENDING"
+                            ? "pending"
+                            : account.verificationStatus === "REJECTED"
+                                ? "rejected"
+                                : account.connectedAt ? "connected_unverified" : "unverified",
                     latest_metrics: account.snapshots?.[0] ? {
                         observed_at: account.snapshots[0].observedAt.toISOString(),
                         data_source: account.snapshots[0].dataSource,
