@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { FiCheck, FiClock, FiExternalLink, FiRefreshCw, FiSend, FiUsers, FiXCircle } from "react-icons/fi";
 
 const buttonPrimary = "inline-flex items-center justify-center gap-2 rounded-lg bg-[#FA8500] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#e87900] disabled:cursor-not-allowed disabled:opacity-50";
@@ -35,8 +36,10 @@ function formatMoney(amount, currency = "USD") {
 }
 
 export default function CampaignWorkflowPage() {
+    const searchParams = useSearchParams();
+    const requestedCampaignId = searchParams.get("campaignId") || "";
     const [campaigns, setCampaigns] = useState([]);
-    const [campaignId, setCampaignId] = useState("");
+    const [campaignId, setCampaignId] = useState(requestedCampaignId);
     const [records, setRecords] = useState([]);
     const [loading, setLoading] = useState(true);
     const [busyId, setBusyId] = useState("");
@@ -50,12 +53,17 @@ export default function CampaignWorkflowPage() {
             const response = await fetch("/api/v1/campaigns", { cache: "no-store" });
             const data = await response.json();
             if (!response.ok) throw new Error(data?.error || "Could not load campaigns.");
-            setCampaigns(Array.isArray(data) ? data : []);
-            if (!campaignId && Array.isArray(data) && data.length) setCampaignId(data[0].id);
+            const list = Array.isArray(data) ? data : [];
+            setCampaigns(list);
+            if (requestedCampaignId && list.some((campaign) => campaign.id === requestedCampaignId)) {
+                setCampaignId(requestedCampaignId);
+            } else if (!campaignId && list.length) {
+                setCampaignId(list[0].id);
+            }
         } catch (err) {
             setError(err.message || "Could not load campaigns.");
         }
-    }, [campaignId]);
+    }, [campaignId, requestedCampaignId]);
 
     const loadRecords = useCallback(async () => {
         if (!campaignId) {
