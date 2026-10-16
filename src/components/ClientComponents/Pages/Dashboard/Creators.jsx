@@ -194,7 +194,8 @@ export default function CreatorDiscoveryPage() {
                 <span className="text-xs text-[#6B7280]">Browse public creator profiles</span>
             </header>
             <nav aria-label="Creator workspace" className="flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white p-3">
-                <a href="/dashboard/creators" aria-current="page" className="rounded-lg bg-[#FA8500] px-4 py-2 text-sm font-semibold text-white">Discover / Search Creators</a>
+                <a href="#discoverable-creators" className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Discoverable Creators</a>
+                <a href="#search-creators" aria-current="page" className="rounded-lg bg-[#FA8500] px-4 py-2 text-sm font-semibold text-white">Search Creators</a>
                 <a href="/dashboard/saved-creators" className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Saved Creators</a>
                 <a href="/dashboard/creator-data" className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Import Creator Data</a>
             </nav>
@@ -202,7 +203,7 @@ export default function CreatorDiscoveryPage() {
             {error && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
             {notice && <div role="status" className="rounded-lg border border-[#FAD7AE] bg-[#FFF7ED] px-4 py-3 text-sm text-[#8A4B08]">{notice}</div>}
 
-            <section className="rounded-xl border border-[#E3E7ED] bg-white p-4 shadow-sm">
+            <section id="search-creators" className="rounded-xl border border-[#E3E7ED] bg-white p-4 shadow-sm">
                 <div className="mb-3 flex items-center gap-2 text-sm font-semibold"><FiSearch className="text-[#FA8500]" /> Search creators</div>
                 <form className="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px_auto_auto]" onSubmit={(event) => { event.preventDefault(); loadCreators(); }}>
                     <input className={inputClass} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name, bio, or category" />
@@ -234,7 +235,7 @@ export default function CreatorDiscoveryPage() {
                 </div>
             </section>
 
-            <section className="rounded-xl border border-[#E3E7ED] bg-white p-4 shadow-sm sm:p-5">
+            <section id="discoverable-creators" className="rounded-xl border border-[#E3E7ED] bg-white p-4 shadow-sm sm:p-5">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                     <div>
                         <h2 className="text-lg font-semibold">Campaign matching</h2>
