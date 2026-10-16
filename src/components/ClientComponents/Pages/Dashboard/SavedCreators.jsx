@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { FiBookmark, FiMapPin, FiGlobe, FiRefreshCw } from "react-icons/fi";
+import { FiBookmark, FiMapPin, FiGlobe, FiRefreshCw, FiSearch } from "react-icons/fi";
+
+const inputClass = "w-full rounded-lg border border-[#D9DEE7] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#FA8500]";
+const primaryButton = "inline-flex items-center justify-center gap-2 rounded-lg bg-[#FA8500] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#e87900] disabled:cursor-not-allowed disabled:opacity-60";
 
 export default function SavedCreators() {
     const [creators, setCreators] = useState([]);
@@ -12,6 +15,24 @@ export default function SavedCreators() {
     const [removingId, setRemovingId] = useState("");
     const [error, setError] = useState("");
     const [notice, setNotice] = useState("");
+    const [search, setSearch] = useState("");
+    const [country, setCountry] = useState("");
+    const [platform, setPlatform] = useState("");
+    const [category, setCategory] = useState("");
+    const [matches, setMatches] = useState([]);
+    const [matching, setMatching] = useState(false);
+
+    const visibleCreators = creators.filter((creator) => {
+        const query = search.trim().toLowerCase();
+        const textMatches = !query || [creator.display_name, creator.bio, ...(creator.categories || [])]
+            .some((value) => String(value || "").toLowerCase().includes(query));
+        const countryMatches = !country.trim() || (creator.country || "").toLowerCase().includes(country.trim().toLowerCase());
+        const platformMatches = !platform || (creator.social_accounts || []).some((account) => account.platform === platform);
+        const categoryMatches = !category || (creator.categories || []).some((value) => value.toLowerCase() === category.toLowerCase());
+        return textMatches && countryMatches && platformMatches && categoryMatches;
+    });
+    const platforms = [...new Set(creators.flatMap((creator) => (creator.social_accounts || []).map((account) => account.platform)).filter(Boolean))].sort();
+    const categories = [...new Set(creators.flatMap((creator) => creator.categories || []).filter(Boolean))].sort((a, b) => a.localeCompare(b));
 
     const loadCreators = useCallback(async () => {
         setLoading(true);
@@ -49,6 +70,27 @@ export default function SavedCreators() {
         loadCampaigns();
         return () => { cancelled = true; };
     }, []);
+
+    async function findMatches() {
+        if (!campaignId) {
+            setError("Select a campaign before finding matches.");
+            return;
+        }
+        setMatching(true);
+        setError("");
+        setNotice("");
+        try {
+            const response = await fetch(`/api/v1/campaigns/${encodeURIComponent(campaignId)}/matches?limit=25`, { method: "POST" });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data?.error || "Could not calculate matches.");
+            setMatches(data.matches || []);
+            setNotice(data.disclaimer || "Preliminary profile-fit results loaded.");
+        } catch (err) {
+            setError(err.message || "Could not calculate matches.");
+        } finally {
+            setMatching(false);
+        }
+    }
 
     async function addToCampaign(creator) {
         if (!campaignId) {
@@ -101,8 +143,57 @@ export default function SavedCreators() {
                 </div>
                 <button type="button" onClick={loadCreators} disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#D9DEE7] px-3 py-2.5 text-sm font-medium text-[#495057] hover:bg-[#F8F9FA] disabled:opacity-60"><FiRefreshCw size={14} /> Refresh</button>
             </header>
+            <nav aria-label="Creator workspace" className="flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white p-3">
+                <a href="/dashboard/creators" className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Discoverable</a>
+                <a href="/dashboard/saved-creators" aria-current="page" className="rounded-lg bg-[#FA8500] px-4 py-2 text-sm font-semibold text-white">Saved</a>
+            </nav>
             {error && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
             {notice && <div role="status" className="rounded-lg border border-[#FAD7AE] bg-[#FFF7ED] px-4 py-3 text-sm text-[#8A4B08]">{notice}</div>}
+            <section className="rounded-xl border border-[#E3E7ED] bg-white p-4 shadow-sm">
+                <div className="mb-3 flex items-center gap-2 text-sm font-semibold"><FiSearch className="text-[#FA8500]" /> Search criteria</div>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <label className="text-xs font-medium text-[#495057]">Name, bio, or category
+                        <input className={inputClass + " mt-1"} value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search saved creators" />
+                    </label>
+                    <label className="text-xs font-medium text-[#495057]">Country
+                        <input className={inputClass + " mt-1"} value={country} onChange={(event) => setCountry(event.target.value)} placeholder="e.g. Pakistan" />
+                    </label>
+                    <label className="text-xs font-medium text-[#495057]">Platform
+                        <select className={inputClass + " mt-1"} value={platform} onChange={(event) => setPlatform(event.target.value)}>
+                            <option value="">All platforms</option>
+                            {platforms.map((item) => <option key={item} value={item}>{item}</option>)}
+                        </select>
+                    </label>
+                    <label className="text-xs font-medium text-[#495057]">Category
+                        <select className={inputClass + " mt-1"} value={category} onChange={(event) => setCategory(event.target.value)}>
+                            <option value="">All categories</option>
+                            {categories.map((item) => <option key={item} value={item}>{item}</option>)}
+                        </select>
+                    </label>
+                </div>
+            </section>
+            <section className="rounded-xl border border-[#E3E7ED] bg-white p-4 shadow-sm">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                    <div>
+                        <h2 className="text-lg font-semibold">Campaign matching</h2>
+                        <p className="mt-1 text-sm text-[#6B7280]">Compare this campaign against creator profiles using the same profile-fit matching as discovery.</p>
+                    </div>
+                    <div className="flex w-full flex-col gap-2 sm:flex-row lg:max-w-xl">
+                        <select className={inputClass} value={campaignId} onChange={(event) => { setCampaignId(event.target.value); setMatches([]); }} aria-label="Select campaign">
+                            <option value="">Select a campaign...</option>
+                            {campaigns.map((campaign) => <option key={campaign.id} value={campaign.id}>{campaign.campaign_details?.campaign_title || "Untitled campaign"} · {campaign.status}</option>)}
+                        </select>
+                        <button className={primaryButton + " whitespace-nowrap"} onClick={findMatches} disabled={matching || !campaignId} type="button">{matching ? "Matching..." : "Find matches"}</button>
+                    </div>
+                </div>
+                {matches.length > 0 && <div className="mt-4 space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[#6B7280]">Top matches</p>
+                    {matches.map((match) => <div key={match.creator_id} className="flex items-center justify-between gap-3 rounded-lg border border-[#E3E7ED] p-3">
+                        <div><p className="text-sm font-semibold">{match.display_name}</p><p className="text-xs text-[#6B7280]">{match.recommendation_label || "Preliminary fit"}</p></div>
+                        <span className="rounded-lg bg-[#FFF7ED] px-3 py-2 text-sm font-bold text-[#C66A00]">{match.match_score}%</span>
+                    </div>)}
+                </div>}
+            </section>
             <section className="rounded-xl border border-[#E3E7ED] bg-white p-4 shadow-sm">
                 <label className="block text-xs font-semibold text-[#495057]">Add shortlisted creators to campaign
                     <select className="mt-1 w-full rounded-lg border border-[#D9DEE7] bg-white px-3 py-2.5 text-sm font-normal outline-none focus:border-[#FA8500] sm:max-w-xl" value={campaignId} onChange={(event) => setCampaignId(event.target.value)}>
@@ -115,16 +206,16 @@ export default function SavedCreators() {
             </section>
             {loading ? (
                 <div className="rounded-xl border border-[#E3E7ED] bg-white p-10 text-center text-sm text-[#6B7280]">Loading saved creators...</div>
-            ) : creators.length === 0 ? (
+            ) : visibleCreators.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-[#CBD2DC] bg-white px-6 py-12 text-center">
                     <FiBookmark size={28} className="mx-auto text-[#9CA3AF]" />
-                    <h2 className="mt-3 font-semibold">Your shortlist is empty</h2>
-                    <p className="mx-auto mt-1 max-w-md text-sm text-[#6B7280]">Go to Creator Discovery and save public profiles you may want to consider for a campaign.</p>
-                    <a href="/dashboard/creators" className="mt-4 inline-flex rounded-lg bg-[#FA8500] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#e87900]">Browse creators</a>
+                    <h2 className="mt-3 font-semibold">{creators.length ? "No saved creators match these criteria" : "Your shortlist is empty"}</h2>
+                    <p className="mx-auto mt-1 max-w-md text-sm text-[#6B7280]">{creators.length ? "Adjust your search criteria to see more saved creators." : "Go to Creator Discovery and save public profiles you may want to consider for a campaign."}</p>
+                    {!creators.length && <a href="/dashboard/creators" className="mt-4 inline-flex rounded-lg bg-[#FA8500] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#e87900]">Browse creators</a>}
                 </div>
             ) : (
                 <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    {creators.map((creator) => (
+                    {visibleCreators.map((creator) => (
                         <article key={creator.id} className="flex flex-col rounded-xl border border-[#E3E7ED] bg-white p-4 shadow-sm">
                             <div className="flex items-start gap-3">
                                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#FFF0DF] text-sm font-bold text-[#B85E00]">{(creator.display_name || "C").trim().slice(0, 1).toUpperCase()}</div>

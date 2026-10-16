@@ -1,5 +1,5 @@
-import CampaignPlan from "@/components/ClientComponents/Pages/Dashboard/CampaignPlan";
+import { redirect } from "next/navigation";
 
 export default function Page() {
-    return <CampaignPlan />;
+    redirect("/dashboard/campaign");
 }

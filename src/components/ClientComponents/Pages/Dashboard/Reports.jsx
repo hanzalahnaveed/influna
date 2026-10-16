@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { FiBarChart2, FiCheckCircle, FiClock, FiRefreshCw, FiUsers, FiAlertTriangle, FiTrendingUp } from "react-icons/fi";
 
@@ -17,23 +17,24 @@ function currencyTotalsLabel(items) {
     return items.map((item) => new Intl.NumberFormat("en", { style: "currency", currency: item.currency, maximumFractionDigits: 2 }).format(item.amount)).join(" · ");
 }
 function Metric({ label, value, hint, icon: Icon, warning = false }) {
-    return <article className="rounded-xl border border-[#E3E7ED] bg-white p-4 shadow-sm">
-        <div className="flex items-start justify-between gap-3"><p className="text-sm text-[#6B7280]">{label}</p><span className={"rounded-lg p-2 " + (warning ? "bg-amber-50 text-amber-700" : "bg-orange-50 text-[#FA8500]")}><Icon size={18} /></span></div>
-        <p className="mt-3 text-2xl font-bold tracking-tight">{typeof value === "string" ? value : number(value)}</p>
-        {hint && <p className="mt-1 text-xs text-[#6B7280]">{hint}</p>}
+    return <article className="flex min-h-[148px] flex-col rounded-xl border border-[#E3E7ED] bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+        <div className="flex items-center justify-between gap-3"><p className="text-sm font-semibold text-[#596273]">{label}</p><span className={"flex h-10 w-10 shrink-0 items-center justify-center rounded-xl " + (warning ? "bg-amber-100 text-amber-700" : "bg-orange-100 text-[#C65F00]")}><Icon size={18} /></span></div>
+        <p className="mt-4 text-3xl font-bold leading-none tracking-tight text-[#212529]">{typeof value === "string" ? value : number(value)}</p>
+        {hint && <p className="mt-2 text-sm text-[#737B89]">{hint}</p>}
     </article>;
 }
 
-export default function CampaignReportsPage() {
+export default function CampaignReportsPage({ campaignId, showSummary = true, showBreakdown = true, hideCampaignTotal = false }) {
     const [report, setReport] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    async function loadReport() {
+    const loadReport = useCallback(async () => {
         setLoading(true);
         setError("");
         try {
-            const response = await fetch("/api/v1/reports/campaigns", { cache: "no-store" });
+            const query = campaignId ? `?campaignId=${encodeURIComponent(campaignId)}` : "";
+            const response = await fetch(`/api/v1/reports/campaigns${query}`, { cache: "no-store" });
             const data = await response.json();
             if (!response.ok) throw new Error(data?.error || "Could not load campaign reports.");
             setReport(data);
@@ -42,17 +43,18 @@ export default function CampaignReportsPage() {
         } finally {
             setLoading(false);
         }
-    }
+    }, [campaignId]);
 
-    useEffect(() => { loadReport(); }, []);
+    useEffect(() => { loadReport(); }, [loadReport]);
 
     const totals = report?.totals;
-    return <main className="flex flex-col gap-6 pb-8 text-[#212529]">
+    const Heading = showBreakdown ? "h1" : "h2";
+    return <main className="flex flex-col gap-5 pb-8 text-[#212529]">
         <header className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
             <div>
                 <p className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#FA8500]">Campaign intelligence</p>
-                <h1 className="text-2xl font-bold tracking-tight sm:text-[28px]">Campaign reports</h1>
-                <p className="mt-1 max-w-2xl text-sm text-[#6B7280]">Track collaboration progress, deliverable approvals, and overdue work across your campaigns.</p>
+                <Heading className="text-2xl font-bold tracking-tight sm:text-[28px]">{campaignId ? "Campaign breakdown" : showBreakdown ? "Campaign reports" : "Campaign report summary"}</Heading>
+                <p className="mt-1 max-w-2xl text-sm text-[#6B7280]">{campaignId ? "Track collaboration progress, deliverables, commercial activity, and recorded outcomes for this campaign." : showBreakdown ? "Track collaboration progress, deliverable approvals, and overdue work across your campaigns." : "Portfolio-wide collaboration, deliverable, and recorded outcome metrics."}</p>
             </div>
             <button className={secondary} type="button" onClick={loadReport} disabled={loading}><FiRefreshCw size={14} /> Refresh</button>
         </header>
@@ -64,8 +66,8 @@ export default function CampaignReportsPage() {
 
         {loading && !report ? <div className="rounded-xl border border-[#E3E7ED] bg-white p-8 text-center text-sm text-[#6B7280]">Loading reports…</div> : null}
         {report && <>
-            <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <Metric label="Campaigns" value={totals.campaigns} hint="All campaigns you own" icon={FiBarChart2} />
+            {showSummary && <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                {!hideCampaignTotal && <Metric label="Campaigns" value={totals.campaigns} hint="All campaigns you own" icon={FiBarChart2} />}
                 <Metric label="Creator collaborations" value={totals.creators} hint="Unique campaign-creator records" icon={FiUsers} />
                 <Metric label="Completed collaborations" value={totals.completed_collaborations} hint={totals.active_collaborations + " currently in progress"} icon={FiCheckCircle} />
                 <Metric label="Overdue deliverables" value={totals.overdue_deliverables} hint="Past deadline and not approved" icon={FiAlertTriangle} warning={totals.overdue_deliverables > 0} />
@@ -74,13 +76,13 @@ export default function CampaignReportsPage() {
                 <Metric label="Recorded impressions" value={totals.impressions} hint={number(totals.performance_snapshots) + " manual snapshots · may repeat reporting periods"} icon={FiBarChart2} />
                 <Metric label="Recorded engagements" value={totals.engagements} hint={number(totals.tracked_creators) + " creators with performance data"} icon={FiUsers} />
                 <Metric label="Clicks / conversions" value={totals.clicks} hint={number(totals.conversions) + " conversions recorded" } icon={FiTrendingUp} />
-            </section>
+            </section>}
 
-            <section className="rounded-xl border border-[#E3E7ED] bg-white p-4 shadow-sm sm:p-5">
+            {showBreakdown && <section className="rounded-xl border border-[#E3E7ED] bg-white p-4 shadow-sm sm:p-5">
                 <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between"><div><h2 className="text-lg font-semibold">Campaign breakdown</h2><p className="mt-1 text-sm text-[#6B7280]">Per-campaign collaboration funnel and deliverable status.</p></div><p className="text-xs text-[#6B7280]">Updated {new Date(report.generated_at).toLocaleString()}</p></div>
                 {report.campaigns.length === 0 ? <div className="py-10 text-center"><p className="font-semibold">No campaigns yet</p><p className="mt-1 text-sm text-[#6B7280]">Create a campaign to start tracking its progress.</p><Link href="/dashboard/campaign" className="mt-4 inline-flex rounded-lg bg-[#FA8500] px-4 py-2.5 text-sm font-semibold text-white">Open campaigns</Link></div> : <div className="mt-4 space-y-4">
                     {report.campaigns.map((campaign) => <article key={campaign.id} className="rounded-xl border border-[#E3E7ED] p-4">
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"><div><h3 className="font-semibold">{campaign.title}</h3><p className="mt-1 text-xs text-[#6B7280]">Created {dateLabel(campaign.created_at)} · Campaign status: {campaign.status}</p></div><Link href="/dashboard/campaign-workflow" className="text-sm font-semibold text-[#B85F00] hover:underline">Open workflow →</Link></div>
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"><div><h3 className="font-semibold">{campaign.title}</h3><p className="mt-1 text-xs text-[#6B7280]">Created {dateLabel(campaign.created_at)} · Campaign status: {campaign.status}</p></div><Link href={`/dashboard/campaign-workflow?campaignId=${encodeURIComponent(campaign.id)}`} className="text-sm font-semibold text-[#B85F00] hover:underline">Open workflow →</Link></div>
                         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-7">
                             <div className="rounded-lg bg-slate-50 p-3"><p className="text-xs text-[#6B7280]">Creators</p><p className="mt-1 text-xl font-bold">{number(campaign.creators.total)}</p></div>
                             <div className="rounded-lg bg-slate-50 p-3"><p className="text-xs text-[#6B7280]">Accepted / in progress</p><p className="mt-1 text-xl font-bold">{number(campaign.creators.accepted + campaign.creators.submitted + campaign.creators.changes_requested + campaign.creators.approved)}</p></div>
@@ -111,7 +113,7 @@ export default function CampaignReportsPage() {
                         {campaign.deliverables.total > 0 ? <div className="mt-4"><div className="mb-1 flex items-center justify-between text-xs"><span className="font-medium text-[#495057]">Deliverable approval progress</span><span className="font-semibold">{campaign.deliverables.completion_rate}%</span></div><div className="h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-[#FA8500] transition-all" style={{ width: campaign.deliverables.completion_rate + "%" }} /></div><div className="mt-3 flex flex-wrap gap-2 text-xs"><span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">{campaign.deliverables.pending} pending</span><span className="rounded-full bg-sky-50 px-2.5 py-1 text-sky-700">{campaign.deliverables.submitted} submitted</span><span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-800">{campaign.deliverables.changes_requested} revisions</span><span className="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700">{campaign.deliverables.approved} approved</span></div></div> : <p className="mt-4 text-xs text-[#6B7280]">No deliverable requirements have been added to this campaign yet.</p>}
                     </article>)}
                 </div>}
-            </section>
+            </section>}
         </>}
     </main>;
 }

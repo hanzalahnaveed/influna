@@ -9,9 +9,9 @@ const secondary = "inline-flex items-center justify-center gap-2 rounded-lg bord
 const emptyDraft = { creator_id: "", rate_card_id: "", quantity: "1", notes: "" };
 function money(amount, currency) { try { return new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 2 }).format(Number(amount)); } catch { return `${currency} ${amount}`; } }
 
-export default function CampaignPlanPage() {
+export default function CampaignPlanPage({ initialCampaignId = "", embedded = false }) {
     const [campaigns, setCampaigns] = useState([]);
-    const [campaignId, setCampaignId] = useState("");
+    const [campaignId, setCampaignId] = useState(initialCampaignId);
     const [creators, setCreators] = useState([]);
     const [items, setItems] = useState([]);
     const [draft, setDraft] = useState(emptyDraft);
@@ -23,6 +23,7 @@ export default function CampaignPlanPage() {
     const [notice, setNotice] = useState("");
 
     const loadCampaigns = useCallback(async () => {
+        if (initialCampaignId) return;
         try {
             const response = await fetch("/api/v1/campaigns", { cache: "no-store" });
             const data = await response.json();
@@ -31,7 +32,7 @@ export default function CampaignPlanPage() {
             setCampaigns(list);
             if (!campaignId && list.length) setCampaignId(list[0].id);
         } catch (err) { setError(err.message || "Could not load campaigns."); }
-    }, [campaignId]);
+    }, [campaignId, initialCampaignId]);
 
     const loadPlan = useCallback(async () => {
         if (!campaignId) { setCreators([]); setItems([]); setBudget(null); setLoading(false); return; }
@@ -45,7 +46,12 @@ export default function CampaignPlanPage() {
         finally { setLoading(false); }
     }, [campaignId]);
 
-    useEffect(() => { loadCampaigns(); }, [loadCampaigns]);
+    useEffect(() => {
+        if (!initialCampaignId) loadCampaigns();
+    }, [initialCampaignId, loadCampaigns]);
+    useEffect(() => {
+        if (initialCampaignId) setCampaignId(initialCampaignId);
+    }, [initialCampaignId]);
     useEffect(() => { loadPlan(); }, [loadPlan]);
 
     const totals = useMemo(() => items.reduce((result, item) => {
@@ -121,18 +127,25 @@ export default function CampaignPlanPage() {
         finally { setSaving(false); }
     }
 
-    return <main className="flex flex-col gap-6 pb-8 text-[#212529]">
-        <header className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+    return <div className="flex flex-col gap-6 pb-8 text-[#212529]">
+        {!embedded && <header className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
             <div><p className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#FA8500]">Campaign operations</p><h1 className="text-2xl font-bold tracking-tight sm:text-[28px]">Campaign plan & budget</h1><p className="mt-1 max-w-2xl text-sm text-[#6B7280]">Build a proposed creator lineup from your campaign shortlist, estimate deliverable spend, and compare it with your budget before inviting creators.</p></div>
             <button type="button" className={secondary} onClick={() => { loadCampaigns(); loadPlan(); }} disabled={loading}><FiRefreshCw size={14} /> Refresh</button>
-        </header>
+        </header>}
+        {embedded && <div className="flex justify-end">
+            <button type="button" className={secondary} onClick={loadPlan} disabled={loading}><FiRefreshCw size={14} /> Refresh plan</button>
+        </div>}
         <div role="note" className="rounded-lg border border-sky-200 bg-sky-50 px-4 py-3 text-sm leading-5 text-sky-900">Plans are estimates based on current public creator rate cards. Saving a plan does not invite creators, lock rates, or create a payment. Final fees are agreed separately in campaign negotiations. Currency totals are kept separate; no conversion is applied.</div>
         {error && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
         {notice && <div role="status" className="rounded-lg border border-[#FAD7AE] bg-[#FFF7ED] px-4 py-3 text-sm text-[#8A4B08]">{notice}</div>}
-        <section className="rounded-xl border border-[#E3E7ED] bg-white p-5">
-            <label className="block text-sm font-medium">Campaign<select className={inputClass + " mt-1"} value={campaignId} onChange={event => setCampaignId(event.target.value)}><option value="">Select a campaign...</option>{campaigns.map(campaign => <option key={campaign.id} value={campaign.id}>{campaign.campaign_details?.campaign_title || "Untitled campaign"} · {campaign.status}</option>)}</select></label>
-            {selectedCampaign && <p className="mt-2 text-xs text-[#6B7280]">Add creators to this campaign first via Creator Discovery or Creator Workflow. Only public rate cards for linked creators can be planned.</p>}
-        </section>
+        {embedded ? (
+            <p className="text-xs text-[#6B7280]">Add creators to this campaign first via Creator Discovery or Creator Workflow. Only public rate cards for linked creators can be planned.</p>
+        ) : (
+            <section className="rounded-xl border border-[#E3E7ED] bg-white p-5">
+                <label className="block text-sm font-medium">Campaign<select className={inputClass + " mt-1"} value={campaignId} onChange={event => setCampaignId(event.target.value)}><option value="">Select a campaign...</option>{campaigns.map(campaign => <option key={campaign.id} value={campaign.id}>{campaign.campaign_details?.campaign_title || "Untitled campaign"} · {campaign.status}</option>)}</select></label>
+                {selectedCampaign && <p className="mt-2 text-xs text-[#6B7280]">Add creators to this campaign first via Creator Discovery or Creator Workflow. Only public rate cards for linked creators can be planned.</p>}
+            </section>
+        )}
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-xl border border-[#E3E7ED] bg-white p-4"><p className="text-xs text-[#6B7280]">Campaign budget</p><p className="mt-1 text-xl font-bold">{budget ? money(budget.amount, budget.currency) : "Not set"}</p></div>
             {Object.entries(totals).map(([currency, total]) => <div key={currency} className="rounded-xl border border-[#E3E7ED] bg-white p-4"><p className="text-xs text-[#6B7280]">Planned spend · {currency}</p><p className="mt-1 text-xl font-bold">{money(total, currency)}</p></div>)}
@@ -180,5 +193,5 @@ export default function CampaignPlanPage() {
             <p className="mt-3 text-xs leading-5 text-[#6B7280]">Invitations are recorded in Influna; no email or social message is sent. Deliverable creation is available only after acceptance and is safe to retry without creating duplicates. It creates requirements, not posts or payments.</p>
         </section>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><p className="text-xs text-[#6B7280]">Estimates snapshot the selected public rate when saved. If a creator changes their rate later, refresh the plan to review differences.</p><button type="button" className={primary} onClick={savePlan} disabled={!campaignId || saving || loading}><FiSave size={15} /> {saving ? "Saving plan..." : "Save campaign plan"}</button></div>
-    </main>;
+    </div>;
 }

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FiSearch, FiUsers, FiMapPin, FiGlobe, FiRefreshCw } from "react-icons/fi";
+import Link from "next/link";
 
 const inputClass = "w-full rounded-lg border border-[#D9DEE7] bg-white px-3 py-2.5 text-sm outline-none transition focus:border-[#FA8500]";
 const primaryButton = "inline-flex items-center justify-center gap-2 rounded-lg bg-[#FA8500] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#e87900] disabled:cursor-not-allowed disabled:opacity-60";
@@ -194,17 +195,15 @@ export default function CreatorDiscoveryPage() {
                 <span className="text-xs text-[#6B7280]">Browse public creator profiles</span>
             </header>
             <nav aria-label="Creator workspace" className="flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white p-3">
-                <a href="#discoverable-creators" className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Discoverable Creators</a>
-                <a href="#search-creators" aria-current="page" className="rounded-lg bg-[#FA8500] px-4 py-2 text-sm font-semibold text-white">Search Creators</a>
-                <a href="/dashboard/saved-creators" className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Saved Creators</a>
-                <a href="/dashboard/creator-data" className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Import Creator Data</a>
+                <a href="#discoverable-creators" aria-current="page" className="rounded-lg bg-[#FA8500] px-4 py-2 text-sm font-semibold text-white">Discoverable</a>
+                <Link href="/dashboard/saved-creators" className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Saved</Link>
             </nav>
 
             {error && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
             {notice && <div role="status" className="rounded-lg border border-[#FAD7AE] bg-[#FFF7ED] px-4 py-3 text-sm text-[#8A4B08]">{notice}</div>}
 
             <section id="search-creators" className="rounded-xl border border-[#E3E7ED] bg-white p-4 shadow-sm">
-                <div className="mb-3 flex items-center gap-2 text-sm font-semibold"><FiSearch className="text-[#FA8500]" /> Search creators</div>
+                <div className="mb-3 flex items-center gap-2 text-sm font-semibold"><FiSearch className="text-[#FA8500]" /> Search criteria</div>
                 <form className="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px_auto_auto]" onSubmit={(event) => { event.preventDefault(); loadCreators(); }}>
                     <input className={inputClass} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name, bio, or category" />
                     <input className={inputClass} value={country} onChange={(e) => setCountry(e.target.value)} placeholder="Country, e.g. Pakistan" />
@@ -235,7 +234,7 @@ export default function CreatorDiscoveryPage() {
                 </div>
             </section>
 
-            <section id="discoverable-creators" className="rounded-xl border border-[#E3E7ED] bg-white p-4 shadow-sm sm:p-5">
+            <section className="rounded-xl border border-[#E3E7ED] bg-white p-4 shadow-sm sm:p-5">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                     <div>
                         <h2 className="text-lg font-semibold">Campaign matching</h2>
@@ -306,10 +305,16 @@ export default function CreatorDiscoveryPage() {
                 )}
             </section>
 
-            <section>
-                <div className="mb-3 flex items-center justify-between gap-3">
-                    <h2 className="text-lg font-semibold">Creator profiles</h2>
+            <section id="discoverable-creators">
+                <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h2 className="text-lg font-semibold">Discoverable creators</h2>
+                        <p className="mt-1 text-xs text-[#6B7280]">Browse public creator profiles matching your criteria.</p>
+                    </div>
+                    <div className="flex items-center gap-3">
                     <span className="rounded-full bg-white px-3 py-1 text-xs text-[#6B7280] shadow-sm">{loading ? "Loading..." : `${visibleCreators.length} profiles`}</span>
+                        <Link href="/dashboard/creator-data" className={primaryButton}>Import creator data</Link>
+                    </div>
                 </div>
                 {loading ? (
                     <div className="rounded-xl border border-[#E3E7ED] bg-white p-10 text-center text-sm text-[#6B7280]">Loading creator profiles...</div>

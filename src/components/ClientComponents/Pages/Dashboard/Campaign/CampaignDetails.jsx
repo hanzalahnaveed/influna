@@ -3,12 +3,13 @@ import React, { useEffect, useState } from "react"
 import { useParams } from "next/navigation";
 import { CAMPAIGN_ENDPOINTS } from "@/axios/Endpoints";
 import DetailView from "./campaignView/detailView";
-import dayjs from 'dayjs';
 import { Get } from "@/axios/Get";
 import { Put } from "@/axios/Put";
 import { Form } from "antd";
 import CampaignEditModal from "@/components/ReusableComponents/CustomModals/CampaignEditModal";
 import ButtonPrimary from "@/components/ReusableComponents/CustomButton/ButtonPrimary";
+import CampaignPlan from "@/components/ClientComponents/Pages/Dashboard/CampaignPlan";
+import CampaignReportsPage from "@/components/ClientComponents/Pages/Dashboard/Reports";
 
 const CampaignDetails = () => {
 
@@ -76,6 +77,16 @@ const CampaignDetails = () => {
                 <a href={"/dashboard/deliverables?campaignId=" + encodeURIComponent(params?.id || "")} className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Deliverables</a>
             </div>
             <DetailView data={campaignDetails} loading={loading}/>
+            <section className="mt-8 rounded-xl border border-[#E3E7ED] bg-white p-5">
+                <div className="mb-5">
+                    <h2 className="text-xl font-bold tracking-wide">Campaign &amp; Budget</h2>
+                    <p className="mt-1 text-sm text-slate-600">Plan creator deliverables and compare estimated spend with this campaign’s budget.</p>
+                </div>
+                <CampaignPlan key={params?.id} initialCampaignId={params?.id || ""} embedded />
+            </section>
+            <section className="mt-8">
+                <CampaignReportsPage campaignId={params?.id} showSummary={false} />
+            </section>
             <CampaignEditModal data={campaignDetails} form={editForm} loading={saving} isCampaignEditModalOpen={editOpen} handleCampaignEditModalSubmit={saveCampaign} handleCampaignEditModalCancel={() => setEditOpen(false)}/>
         </div>
     );

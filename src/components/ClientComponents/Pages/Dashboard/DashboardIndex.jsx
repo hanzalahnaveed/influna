@@ -8,6 +8,7 @@ import { CiHeart } from "react-icons/ci";
 import { PiUsersThreeThin } from "react-icons/pi";
 import { DASHBOARD_ENDPOINTS } from "@/axios/Endpoints";
 import { Get } from "@/axios/Get";
+import CampaignReportsPage from "@/components/ClientComponents/Pages/Dashboard/Reports";
 
 const DashboardIndex = () => {
     const [summary, setSummary] = useState(null);
@@ -40,7 +41,12 @@ const DashboardIndex = () => {
     return (
         <div className="h-full">
             {error && <Alert className="mb-4" type="error" message={error} showIcon />}
-            <div className="grid grid-cols-4 gap-[15px]">
+            <section aria-label="Campaign overview">
+                <div className="mb-4">
+                    <h1 className="text-xl font-bold tracking-tight text-[#212529]">Campaign overview</h1>
+                    <p className="mt-1 text-sm text-[#6B7280]">A quick look at your campaign portfolio and progress.</p>
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <AnalyticCard
                     icon={<BsBroadcast color="white" size={20} />}
                     title="Total Campaigns"
@@ -69,6 +75,10 @@ const DashboardIndex = () => {
                     text="Finished campaigns"
                     gradient="bg-linear-to-r from-[#F69256] to-[#FAB16D]"
                 />
+                </div>
+            </section>
+            <div className="mt-8">
+                <CampaignReportsPage showBreakdown={false} hideCampaignTotal />
             </div>
         </div>
     );

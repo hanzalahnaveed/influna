@@ -6,13 +6,14 @@ function jsonError(message, status) {
     return NextResponse.json({ error: message }, { status });
 }
 
-export async function GET() {
+export async function GET(request) {
     const auth = await requireRole("BRAND");
     if (auth.response) return auth.response;
 
     try {
+        const campaignId = new URL(request.url).searchParams.get("campaignId");
         const campaigns = await prisma.campaign.findMany({
-            where: { ownerUserId: auth.user.id },
+            where: { ownerUserId: auth.user.id, ...(campaignId ? { id: campaignId } : {}) },
             include: {
                 creatorLinks: {
                     include: {

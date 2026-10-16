@@ -187,11 +187,6 @@ const CampaignIndex = () => {
                     </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                    <ButtonSecondary
-                        onClick={() => router.push("/dashboard/creator-data")}
-                        text={`Import Creators`}
-                        loading={false}
-                    />
                     <ButtonPrimary
                         onClick = {() => router.push("/dashboard/campaign/create")}
                         text = {`Create New Campaign`}
