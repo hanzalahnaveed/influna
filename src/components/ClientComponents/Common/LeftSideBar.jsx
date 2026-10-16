@@ -8,20 +8,16 @@ import { MdOutlineSpaceDashboard, MdOutlineCampaign } from "react-icons/md";
 
 import { IoSettingsOutline } from "react-icons/io5";
 import { IoIosLogOut } from "react-icons/io";
-import { FiUsers, FiGitPullRequest, FiMail, FiUser, FiFileText, FiBriefcase, FiTruck, FiBarChart2, FiShield, FiDollarSign, FiBell, FiTrendingUp, FiDatabase } from "react-icons/fi";
+import { FiUsers, FiGitPullRequest, FiMail, FiUser, FiFileText, FiBriefcase, FiTruck, FiBarChart2, FiShield, FiDollarSign, FiBell, FiTrendingUp } from "react-icons/fi";
 
 const defaultMenu = [
     { id: 1, sidebar_name: "Dashboard", route: "/dashboard", icon: MdOutlineSpaceDashboard },
     { id: 2, sidebar_name: "Campaign", route: "/dashboard/campaign", icon: MdOutlineCampaign },
     { id: 3, sidebar_name: "Creators", route: "/dashboard/creators", icon: FiUsers },
-    { id: 17, sidebar_name: "Creator Data Import", route: "/dashboard/creator-data", icon: FiDatabase },
     { id: 19, sidebar_name: "Campaign Plan & Budget", route: "/dashboard/campaign-plan", icon: FiDollarSign },
-    { id: 15, sidebar_name: "Saved Creators", route: "/dashboard/saved-creators", icon: FiUsers },
-    { id: 4, sidebar_name: "Creator Workflow", route: "/dashboard/campaign-workflow", icon: FiGitPullRequest },
     { id: 5, sidebar_name: "Creator Invitations", route: "/dashboard/creator-invitations", icon: FiMail },
     { id: 6, sidebar_name: "My Creator Profile", route: "/dashboard/creator-profile", icon: FiUser },
                             
-    { id: 7, sidebar_name: "Deliverables", route: "/dashboard/deliverables", icon: FiFileText },
     { id: 8, sidebar_name: "Explore Campaigns", route: "/dashboard/creator-campaigns", icon: FiBriefcase },
     { id: 9, sidebar_name: "Product Shipping", route: "/dashboard/shipping", icon: FiTruck },
     { id: 10, sidebar_name: "Campaign Reports", route: "/dashboard/reports", icon: FiBarChart2 },
@@ -49,7 +45,6 @@ const LeftSidebar = () => {
                             { id: 8, sidebar_name: "Explore Campaigns", route: "/dashboard/creator-campaigns", icon: FiBriefcase },
                             { id: 5, sidebar_name: "Creator Invitations", route: "/dashboard/creator-invitations", icon: FiMail },
                             { id: 6, sidebar_name: "My Creator Profile", route: "/dashboard/creator-profile", icon: FiUser },
-                            { id: 7, sidebar_name: "Deliverables", route: "/dashboard/deliverables", icon: FiFileText },
                             { id: 9, sidebar_name: "Product Shipping", route: "/dashboard/shipping", icon: FiTruck },
                             { id: 12, sidebar_name: "Commercials & Payments", route: "/dashboard/commercials", icon: FiDollarSign },
                             { id: 14, sidebar_name: "Notifications", route: "/dashboard/notifications", icon: FiBell },
