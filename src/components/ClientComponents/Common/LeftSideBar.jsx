@@ -5,10 +5,8 @@ import { useRouter } from "nextjs-toploader/app";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { MdOutlineSpaceDashboard, MdOutlineCampaign } from "react-icons/md";
-<<<<<<< HEAD
-=======
+
 import { IoSettingsOutline } from "react-icons/io5";
->>>>>>> 77eecdf9ae5d08a484fdc1f796908b16c26aa252
 import { IoIosLogOut } from "react-icons/io";
 import { FiUsers, FiGitPullRequest, FiMail, FiUser, FiFileText, FiBriefcase, FiTruck, FiBarChart2, FiShield, FiDollarSign, FiBell, FiTrendingUp, FiDatabase } from "react-icons/fi";
 
@@ -118,16 +116,14 @@ const LeftSidebar = () => {
                 </nav>
             </div>
             <div className="mx-5 flex flex-col gap-3">
-<<<<<<< HEAD
-=======
-                <Link
+
+<Link
                     href="/dashboard/setting"
                     className="flex h-[40px] w-full items-center gap-3 rounded-xl px-5 text-[14px] text-white transition-colors hover:bg-[#FA8500]"
                 >
                     <IoSettingsOutline size={20} />
                     <span>Settings</span>
                 </Link>
->>>>>>> 77eecdf9ae5d08a484fdc1f796908b16c26aa252
                 <button
                     type="button"
                     onClick={async () => {
