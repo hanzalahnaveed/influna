@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { FiCalendar, FiCheck, FiClock, FiExternalLink, FiFileText, FiRefreshCw, FiUploadCloud } from "react-icons/fi";
 
 const primary = "inline-flex items-center justify-center gap-2 rounded-lg bg-[#FA8500] px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-[#e87900] disabled:cursor-not-allowed disabled:opacity-50";
@@ -23,10 +24,12 @@ function statusClass(value) {
 }
 
 export default function DeliverablesPage() {
+    const searchParams = useSearchParams();
+    const requestedCampaignId = searchParams.get("campaignId") || "";
     const [user, setUser] = useState(null);
     const [campaigns, setCampaigns] = useState([]);
     const [links, setLinks] = useState([]);
-    const [campaignId, setCampaignId] = useState("");
+    const [campaignId, setCampaignId] = useState(requestedCampaignId);
     const [linkId, setLinkId] = useState("");
     const [deliverables, setDeliverables] = useState([]);
     const [drafts, setDrafts] = useState({});
@@ -85,9 +88,11 @@ export default function DeliverablesPage() {
                     if (cancelled) return;
                     const list = Array.isArray(campaignsData) ? campaignsData : [];
                     setCampaigns(list);
-                    const firstId = list[0]?.id || "";
-                    setCampaignId(firstId);
-                    if (firstId) await loadLinks(data.user, firstId);
+                    const initialId = requestedCampaignId && list.some((campaign) => campaign.id === requestedCampaignId)
+                        ? requestedCampaignId
+                        : (list[0]?.id || "");
+                    setCampaignId(initialId);
+                    if (initialId) await loadLinks(data.user, initialId);
                 } else {
                     await loadLinks(data.user, "");
                 }
@@ -99,7 +104,7 @@ export default function DeliverablesPage() {
         }
         init();
         return () => { cancelled = true; };
-    }, [loadLinks]);
+    }, [loadLinks, requestedCampaignId]);
 
     useEffect(() => {
         if (!user || user.role !== "BRAND") return;
