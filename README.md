@@ -53,12 +53,16 @@ For production, configure `DATABASE_URL`, run `npm run db:generate` during the b
 | `PATCH` | `/api/v1/creators/:id` | Update creator profile fields |
 | `POST` | `/api/v1/social-accounts/:id/snapshots` | Record a timestamped social-metric snapshot |
 | `POST` | `/api/v1/campaigns/:id/matches` | Calculate and save transparent rule-based creator matches |
+<<<<<<< HEAD
 | `GET` | `/api/v1/campaigns/:id/creators` | List creator records, workflow status, commercial terms, and deliverables for a campaign |
 | `GET` | `/api/v1/campaigns/:id/performance` | List creator collaborations, performance snapshot history, and summary metrics for an owned campaign |
 | `POST` | `/api/v1/campaigns/:id/performance` | Record a manual performance snapshot for an accepted collaboration |
 | `GET` | `/api/v1/campaigns/:id/plan` | Read the owned campaign's planned deliverables, creator rates, and budget |
 | `PUT` | `/api/v1/campaigns/:id/plan` | Replace the owned campaign's proposed plan after ownership and public-rate validation |
 | `POST` | `/api/v1/campaigns/:id/plan/deliverables` | Transfer planned lines into an accepted collaboration as deliverable requirements |
+=======
+| `GET` | `/api/v1/campaigns/:id/creators` | List creator records and workflow status for a campaign |; response includes creator commercial proposal/agreed-fee summary and planned deliverable titles, statuses, and due dates for operational planning
+>>>>>>> 77eecdf9ae5d08a484fdc1f796908b16c26aa252
 | `PATCH` | `/api/v1/campaigns/:id/creators/:campaignCreatorId` | Apply a validated creator collaboration workflow transition |
 | `GET` | `/api/v1/campaigns/:id/creators/:campaignCreatorId/deliverables` | List requirements and versioned submissions for a collaboration |
 | `POST` | `/api/v1/campaigns/:id/creators/:campaignCreatorId/deliverables` | Add a deliverable requirement (brand only) |
@@ -72,10 +76,13 @@ For production, configure `DATABASE_URL`, run `npm run db:generate` during the b
 | `POST` | `/api/v1/creators/:id/social-accounts` | Add a self-reported social account to the signed-in creator profile |
 | `DELETE` | `/api/v1/creators/:id/social-accounts/:socialAccountId` | Remove a social account owned by the signed-in creator |
 | `POST` | `/api/v1/creators/:id/social-accounts/:socialAccountId/verification` | Submit or resubmit a creator-owned social account for verification review |
+<<<<<<< HEAD
 | `GET` | `/api/v1/creator/rate-cards` | List the signed-in creator's rate cards |
 | `POST` | `/api/v1/creator/rate-cards` | Create or replace a rate card for a platform and deliverable type |
 | `PATCH` | `/api/v1/creator/rate-cards` | Update a rate card owned by the signed-in creator |
 | `DELETE` | `/api/v1/creator/rate-cards` | Delete a rate card owned by the signed-in creator |
+=======
+>>>>>>> 77eecdf9ae5d08a484fdc1f796908b16c26aa252
 | `GET` | `/api/v1/admin/verification-requests` | List pending verification requests (ADMIN only) |
 | `GET` | `/api/v1/admin/integrations/status` | Report integration configuration readiness without exposing secrets (ADMIN only) |
 | `GET` | `/api/v1/notifications` | List the signed-in user’s notifications and unread count |
@@ -90,7 +97,11 @@ Campaign JSON uses `campaign_details`, `targeting_criteria`, `platform_details`,
 
 Creator profile fields and social-account handles are supplied by the creator unless otherwise stated. Each metrics snapshot requires a `data_source` of `creator_provided`, `meta_api`, `platform_api`, or `manual_review`, and records when it was observed. Creator-facing metric submission accepts only `creator_provided`; API-source labels cannot be self-asserted through that endpoint. A social account is only marked verified when an authorized reviewer approves its pending request; creators cannot approve their own accounts. Requests may include a reviewer note and evidence URL, and the review stores status, timestamps, reviewer identity, and feedback. The admin endpoints require a user whose database role is `ADMIN`; do not expose admin role selection during public registration. For this milestone, an administrator must be provisioned through a trusted database/operations process. A handle or profile URL alone does not prove account ownership or official metrics. Do not label metrics as API-sourced unless they really came from an authorized platform integration.
 
+<<<<<<< HEAD
 The Campaign Reports dashboard summarizes creator collaboration states, deliverable approvals, overdue deliverables, creator acceptance rate among decided invitations/applications, average stored profile-fit score, and on-time approval rate among approved deliverables with deadlines. Saved creator shortlists are private to each brand account; creators can be saved from Creator Discovery and managed at `/dashboard/saved-creators`. From that page, a brand can add saved creators to an active or draft campaign. Added profiles enter the campaign workflow as `Suggested`; brands must explicitly invite them from the workflow. The Creator Workflow page also brings the campaign brief, collaboration-specific commercial terms, and deliverable plan into one view, while editing offers and deliverables remains in their dedicated workspaces. In-app notifications cover collaboration, deliverable, commercial/payment, and shipment status events. Payment records remain an operational ledger and do not initiate real money transfers. These are operational workflow metrics from Influna records; they do not claim verified reach, engagement, sales, or ROI.\n\nThe matching endpoint uses a deterministic, explainable rule-based score for creator categories/interests, creator location, language, requested platform, and—when criteria and recorded data are available—follower range, minimum engagement rate, and target audience age/gender breakdowns. Campaign setup exposes optional minimum/maximum follower counts and minimum engagement rate. Factors without enough metric data are excluded rather than scored as a mismatch; creator-provided metrics are explicitly identified. The score is a preliminary profile-fit estimate, **not** an AI prediction of campaign performance, authenticity, reach, conversions, or ROI. The matching algorithm is versioned as `rule_based_v3`.
+=======
+The Campaign Reports dashboard summarizes creator collaboration states, deliverable approvals, overdue deliverables, creator acceptance rate among decided invitations/applications, average stored profile-fit score, and on-time approval rate among approved deliverables with deadlines. Saved creator shortlists are private to each brand account; creators can be saved from Creator Discovery and managed at `/dashboard/saved-creators`. From that page, a brand can add saved creators to an active or draft campaign. Added profiles enter the campaign workflow as `Suggested`; brands must explicitly invite them from the workflow. The Creator Workflow page also brings the campaign brief, collaboration-specific commercial terms, and deliverable plan into one view, while editing offers and deliverables remains in their dedicated workspaces. In-app notifications cover collaboration, deliverable, commercial/payment, and shipment status events. Payment records remain an operational ledger and do not initiate real money transfers. These are operational workflow metrics from Influna records; they do not claim verified reach, engagement, sales, or ROI.\n\nThe matching endpoint uses a deterministic, explainable rule-based score for creator categories/interests, creator location, language, requested platform, and—when criteria and recorded data are available—follower range, minimum engagement rate, and target audience age/gender breakdowns. Campaign setup exposes optional minimum/maximum follower counts and minimum engagement rate. Factors without enough metric data are excluded rather than scored as a mismatch; creator-provided metrics are explicitly identified. The score is a preliminary profile-fit estimate, **not** an AI prediction of campaign performance, authenticity, reach, conversions, or ROI. The matching algorithm is versioned as `rule_based_v2`.
+>>>>>>> 77eecdf9ae5d08a484fdc1f796908b16c26aa252
 
 ## Important limitations
 
@@ -134,7 +145,11 @@ The response includes:
 - `match_factors` and `match_reasons`: factor-level scores and plain-language explanations.
 - `missing_data`: gaps that a brand should review before relying on the recommendation.
 
+<<<<<<< HEAD
 Creator discovery displays these details and the available data gaps before the brand records an invitation. Budget-fit status compares a creator's lowest public rate in the campaign budget currency with that budget; this is indicative only and does not estimate the full cost of a multi-creator campaign. Social metrics and audience insights must be reviewed for source and verification status. These recommendations are explainable heuristics, not a trained ML model or a guarantee of results.
+=======
+Creator discovery displays these details and the available data gaps before the brand records an invitation. The matcher does not currently score budget fit because creator rate cards are not yet captured; the campaign budget is not treated as evidence of creator affordability. Social metrics and audience insights must be reviewed for source and verification status. These recommendations are explainable heuristics, not a trained ML model or a guarantee of results.
+>>>>>>> 77eecdf9ae5d08a484fdc1f796908b16c26aa252
 
 
 ## Creator data sources and CSV import
