@@ -193,6 +193,11 @@ export default function CreatorDiscoveryPage() {
                 </div>
                 <span className="text-xs text-[#6B7280]">Browse public creator profiles</span>
             </header>
+            <nav aria-label="Creator workspace" className="flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white p-3">
+                <a href="/dashboard/creators" aria-current="page" className="rounded-lg bg-[#FA8500] px-4 py-2 text-sm font-semibold text-white">Discover / Search Creators</a>
+                <a href="/dashboard/saved-creators" className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Saved Creators</a>
+                <a href="/dashboard/creator-data" className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Import Creator Data</a>
+            </nav>
 
             {error && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
             {notice && <div role="status" className="rounded-lg border border-[#FAD7AE] bg-[#FFF7ED] px-4 py-3 text-sm text-[#8A4B08]">{notice}</div>}
