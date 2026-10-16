@@ -14,8 +14,8 @@ export async function POST(request) {
     const displayName = typeof body?.display_name === "string" ? body.display_name.trim() : "";
 
     if (!isValidEmail(email)) return NextResponse.json({ error: "Enter a valid email address." }, { status: 400 });
-    if (typeof password !== "string" || password.length < 12 || password.length > 128) {
-        return NextResponse.json({ error: "Password must be between 12 and 128 characters." }, { status: 400 });
+    if (typeof password !== "string" || password.length < 4 || password.length > 128) {
+        return NextResponse.json({ error: "Password must be between 4 and 128 characters." }, { status: 400 });
     }
     if (!["BRAND", "CREATOR"].includes(role)) return NextResponse.json({ error: "Role must be BRAND or CREATOR." }, { status: 400 });
     if (role === "CREATOR" && (displayName.length < 2 || displayName.length > 100)) {

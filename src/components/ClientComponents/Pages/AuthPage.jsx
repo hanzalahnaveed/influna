@@ -69,8 +69,8 @@ export default function AuthPage() {
                         <input className={fieldClass} type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} maxLength={254} required />
                     </label>
                     <label className="text-sm font-medium">Password
-                        <input className={fieldClass} type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} value={password} onChange={(event) => setPassword(event.target.value)} minLength={mode === "register" ? 12 : 1} maxLength={128} required />
-                        {mode === "register" && <span className="mt-1 block text-xs font-normal text-[#6B7280]">Use at least 12 characters.</span>}
+                        <input className={fieldClass} type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} value={password} onChange={(event) => setPassword(event.target.value)} minLength={mode === "register" ? 4 : 1} maxLength={128} required />
+                        {mode === "register" && <span className="mt-1 block text-xs font-normal text-[#6B7280]">Use at least 4 characters.</span>}
                     </label>
                     {error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
                     <button className={buttonClass} type="submit" disabled={busy}>{busy ? "Please wait..." : mode === "login" ? "Sign in" : "Create account"}</button>
